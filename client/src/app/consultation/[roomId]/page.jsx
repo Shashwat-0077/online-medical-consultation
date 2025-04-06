@@ -38,13 +38,26 @@ const Consultation = ({ params }) => {
             return;
         }
     }, [setLocalStream]);
+
     const sendStreams = useCallback(() => {
         if (!localStream) {
             console.error("Local stream not available for sending.");
             return;
         }
-        for (const track of localStream.getTracks()) {
-            peerSession.peer.addTrack(track, localStream);
+
+        try {
+            for (const track of localStream.getTracks()) {
+                try {
+                    peerSession.peer.addTrack(track, localStream);
+                } catch (error) {
+                    // Silently ignore "sender already exists" errors
+                    if (!error.message.includes("sender already exists")) {
+                        console.error("Error adding track:", error);
+                    }
+                }
+            }
+        } catch (error) {
+            console.error("Error in sendStreams:", error);
         }
     }, [localStream]);
 
@@ -89,19 +102,21 @@ const Consultation = ({ params }) => {
                 toUserId: userId,
             });
             console.log("Offer sent to user:", userId);
+
+            if (localStream) {
+                sendStreams();
+            }
         },
-        [socket, peerSession, setRemoteSocketId] // Add sendStreams to dependencies
+        [socket, localStream]
     );
-    const handleUserLeave = useCallback(
-        (userId) => {
-            console.log("User left:", userId);
-            setRemoteSocketId(null);
-            setRemoteStream(null);
-            setIsStreamSent(false);
-            peerSession.reset();
-        },
-        [socket]
-    );
+
+    const handleUserLeave = useCallback((userId) => {
+        console.log("User left:", userId);
+        setRemoteSocketId(null);
+        setRemoteStream(null);
+        setIsStreamSent(false);
+        peerSession.reset();
+    }, []);
 
     // calls
     const handleIncomingCall = useCallback(
@@ -117,8 +132,9 @@ const Consultation = ({ params }) => {
             });
             console.log("Answer sent to user:", fromUserId);
         },
-        [socket, peerSession, setRemoteSocketId] // Add sendStreams to dependencies
+        [socket]
     );
+
     const handleCallAnswered = useCallback(
         async ({ answer, fromUserId }) => {
             console.log("Answered Received by:", fromUserId);
@@ -132,17 +148,18 @@ const Consultation = ({ params }) => {
                 setIsStreamSent(true);
             }
         },
-        [socket, localStream, peerSession, sendStreams]
+        [socket, localStream, sendStreams]
     );
 
     // negotiation
-
     const handleNegotiationNeeded = useCallback(async () => {
+        if (!remoteSocketId) return;
+
         console.log("Negotiation Needed");
         const offer = await peerSession.createOffer();
         socket.emit("peer:negotiation", { offer, toUserId: remoteSocketId });
         console.log("Negotiation Request sent");
-    }, [socket, remoteSocketId, peerSession]);
+    }, [socket, remoteSocketId]);
 
     const handleTrack = useCallback(
         async (event) => {
@@ -152,7 +169,7 @@ const Consultation = ({ params }) => {
             // console.log("Received Stream", rStream[0]);
             setRemoteStream(rStream[0]);
         },
-        [setRemoteStream, mySocketId]
+        [mySocketId]
     );
 
     const handleNegotiationIncoming = useCallback(
@@ -167,7 +184,7 @@ const Consultation = ({ params }) => {
             });
             console.log("Negotiation offer sent");
         },
-        [socket, peerSession]
+        [socket]
     );
 
     const handleNegotiationFinal = useCallback(
@@ -178,13 +195,37 @@ const Consultation = ({ params }) => {
                 fromUserId
             );
         },
-        [socket, peerSession]
+        []
     );
+
+    // Handle page refresh - add event listener once
+    useEffect(() => {
+        const handleBeforeUnload = () => {
+            // Clean up resources
+            if (localStream) {
+                localStream.getTracks().forEach((track) => track.stop());
+            }
+
+            // Notify server (if socket is connected)
+            if (socket && socket.connected) {
+                socket.emit("room:leave", roomId);
+            }
+
+            // Reset peer connection
+            peerSession.reset();
+        };
+
+        window.addEventListener("beforeunload", handleBeforeUnload);
+
+        return () => {
+            window.removeEventListener("beforeunload", handleBeforeUnload);
+        };
+    }, [roomId, localStream, socket]);
 
     useEffect(() => {
         socket.emit("room:join", roomId);
         handleStream();
-    }, [socket, handleStream]);
+    }, [socket, roomId, handleStream]);
 
     useEffect(() => {
         socket.on("room:joined", handleRoomJoin);
@@ -244,10 +285,10 @@ const Consultation = ({ params }) => {
     }, [peerSession, handleTrack]);
 
     useLayoutEffect(() => {
-        if (localStream && !isStreamSent) {
+        if (localStream && !isStreamSent && remoteSocketId) {
             sendStreams();
         }
-    }, [isStreamSent, sendStreams, localStream]);
+    }, [isStreamSent, sendStreams, localStream, remoteSocketId]);
 
     return (
         <ProtectedRoute>
