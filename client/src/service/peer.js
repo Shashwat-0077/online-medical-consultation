@@ -47,18 +47,36 @@ class PeerService {
 
     async reset() {
         if (this.peer) {
-            this.peer.close();
-            this.peer = new RTCPeerConnection({
-                iceServers: [
-                    {
-                        urls: [
-                            "stun:stun.l.google.com:19302",
-                            "stun:global.stun.twilio.com:3478",
-                        ],
-                    },
-                ],
+            // Remove all tracks
+            this.peer.getSenders().forEach((sender) => {
+                try {
+                    this.peer.removeTrack(sender);
+                } catch (err) {
+                    console.warn("Failed to remove track:", err);
+                }
             });
+
+            // Remove all event listeners
+            this.peer.ontrack = null;
+            this.peer.onicecandidate = null;
+            this.peer.onnegotiationneeded = null;
+            this.peer.onconnectionstatechange = null;
+
+            // Close connection
+            this.peer.close();
         }
+
+        // Reinitialize peer
+        this.peer = new RTCPeerConnection({
+            iceServers: [
+                {
+                    urls: [
+                        "stun:stun.l.google.com:19302",
+                        "stun:global.stun.twilio.com:3478",
+                    ],
+                },
+            ],
+        });
     }
 }
 
