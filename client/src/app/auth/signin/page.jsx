@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -18,10 +17,11 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2 } from "lucide-react";
+import { useAuthStore } from "@/state/user";
 
-export default function Login() {
+export default function SigIn() {
     const router = useRouter();
-    const { login, loginWithGoogle } = useAuth();
+    const { signIn, signInWithGoogle } = useAuthStore();
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
@@ -33,7 +33,42 @@ export default function Login() {
         setLoading(true);
 
         try {
-            await login(email, password);
+            const result = await signIn(email, password);
+            const resp = await fetch(
+                process.env.NEXT_PUBLIC_API_URL +
+                    "/user" +
+                    `/${result.user.uid}` +
+                    "/role",
+                {
+                    method: "GET",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                }
+            );
+
+            if (!resp.ok) {
+                const error = await resp.json();
+                setError(error.message);
+                setLoading(false);
+                return;
+            }
+
+            const data = await resp.json();
+            console.log(resp);
+
+            if (data.role === "guest") {
+                router.push("/onboarding");
+                return;
+            }
+            if (data.role === "doctor") {
+                router.push("/doctor");
+                return;
+            }
+            if (data.role === "patient") {
+                router.push("/patient");
+                return;
+            }
             router.push("/");
         } catch (err) {
             setError("Failed to sign in");
@@ -48,8 +83,43 @@ export default function Login() {
         setLoading(true);
 
         try {
-            await loginWithGoogle();
-            router.push("/onboarding");
+            const result = await signInWithGoogle();
+
+            const resp = await fetch(
+                process.env.NEXT_PUBLIC_API_URL +
+                    "/user" +
+                    `/${result.user.uid}` +
+                    "/role",
+                {
+                    method: "GET",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                }
+            );
+
+            if (!resp.ok) {
+                const error = await resp.json();
+                setError(error.message);
+                setLoading(false);
+                return;
+            }
+
+            const data = await resp.json();
+            console.log(resp);
+
+            if (data.role === "guest") {
+                router.push("/onboarding");
+                return;
+            }
+            if (data.role === "doctor") {
+                router.push("/doctor");
+                return;
+            }
+            if (data.role === "patient") {
+                router.push("/patient");
+                return;
+            }
         } catch (err) {
             setError("Failed to sign in with Google");
             console.error(err);

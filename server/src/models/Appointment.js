@@ -11,5 +11,28 @@ const appointmentSchema = new mongoose.Schema({
         default: "pending",
     },
 });
+
+// Middleware to check if doctorId and patientId exist
+appointmentSchema.pre("save", async function (next) {
+    const Doctor = mongoose.model("Doctor");
+    const Patient = mongoose.model("Patient");
+
+    try {
+        const doctorExists = await Doctor.findById(this.doctorId);
+        if (!doctorExists) {
+            throw new Error("Doctor with the provided ID does not exist.");
+        }
+
+        const patientExists = await Patient.findById(this.patientId);
+        if (!patientExists) {
+            throw new Error("Patient with the provided ID does not exist.");
+        }
+
+        next();
+    } catch (error) {
+        next(error);
+    }
+});
+
 const Appointment = mongoose.model("Appointment", appointmentSchema);
 module.exports = Appointment;

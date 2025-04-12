@@ -3,7 +3,10 @@ const cors = require("cors");
 const http = require("http");
 const { Server } = require("socket.io");
 const socketSetup = require("#@/socket/index.js");
+const connectDB = require("#@/db.js");
 require("dotenv").config();
+
+connectDB();
 
 // Create Express app
 const app = express();
@@ -18,6 +21,11 @@ app.use(
         credentials: true,
     })
 );
+
+app.use("/api/patient", require("./routes/patient"));
+app.use("/api/doctor", require("./routes/doctor"));
+app.use("/api/appointments", require("./routes/appointments"));
+app.use("/api/user", require("./routes/user"));
 
 const server = http.createServer(app);
 const io = new Server(server, {

@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
@@ -5,14 +7,38 @@ import { Input } from "@/components/ui/input";
 import {
     Calendar,
     Clock,
+    Loader2,
     MessageSquare,
     Shield,
-    Star,
     User,
     Video,
 } from "lucide-react";
+import { useAuthStore } from "@/state/user";
+import { useEffect } from "react";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export default function LandingPage() {
+    const initAuth = useAuthStore((state) => state.initAuth);
+    const user = useAuthStore((state) => state.user);
+    const loading = useAuthStore((state) => state.loading);
+    const signOut = useAuthStore((state) => state.signOut);
+
+    useEffect(() => {
+        // Initialize the auth listener and store the unsubscribe function
+        const unsubscribe = initAuth();
+
+        // Clean up the listener when the component unmounts
+        return () => unsubscribe();
+    }, [initAuth]);
+
     return (
         <div className="flex min-h-screen flex-col">
             <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -21,34 +47,63 @@ export default function LandingPage() {
                         <Shield className="h-6 w-6 text-teal-600" />
                         <span className="text-xl font-bold">VirtualDoc</span>
                     </div>
-                    <nav className="hidden gap-6 md:flex">
-                        <Link
-                            href="#features"
-                            className="text-sm font-medium transition-colors hover:text-teal-600"
-                        >
-                            Features
-                        </Link>
-                        <Link
-                            href="#how-it-works"
-                            className="text-sm font-medium transition-colors hover:text-teal-600"
-                        >
-                            How It Works
-                        </Link>
-                    </nav>
-                    <div className="flex items-center gap-4">
-                        <Link
-                            href="/auth/login"
-                            className="text-sm font-medium transition-colors hover:text-teal-600"
-                        >
-                            Log in
-                        </Link>
-                        <Link
-                            href="/auth/signup"
-                            className="rounded bg-teal-600 px-4 py-2 text-white hover:bg-teal-700"
-                        >
-                            Sign Up
-                        </Link>
-                    </div>
+
+                    {loading ? (
+                        <Loader2 className="h-6 w-6 animate-spin text-teal-600" />
+                    ) : !user ? (
+                        <div className="flex items-center gap-4">
+                            <Link
+                                href="/auth/signin"
+                                className="text-sm font-medium transition-colors hover:text-teal-600"
+                            >
+                                Log in
+                            </Link>
+                            <Link
+                                href="/auth/signup"
+                                className="rounded bg-teal-600 px-4 py-2 text-white hover:bg-teal-700"
+                            >
+                                Sign Up
+                            </Link>
+                        </div>
+                    ) : (
+                        <DropdownMenu modal={false}>
+                            <DropdownMenuTrigger>
+                                <Avatar>
+                                    <AvatarImage
+                                        src={user.photoURL}
+                                        alt="Guest User"
+                                    />
+                                    <AvatarFallback>
+                                        {user.displayName.slice(0, 1) || "G"}
+                                    </AvatarFallback>
+                                </Avatar>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-56">
+                                <DropdownMenuLabel>
+                                    My Account
+                                </DropdownMenuLabel>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem>Profile</DropdownMenuItem>
+                                <DropdownMenuItem>Billing</DropdownMenuItem>
+                                <DropdownMenuItem>Team</DropdownMenuItem>
+                                <DropdownMenuItem>
+                                    Subscription
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem>
+                                    <Button
+                                        variant="destructive"
+                                        className="w-full"
+                                        onClick={() => {
+                                            signOut();
+                                        }}
+                                    >
+                                        Sign Out
+                                    </Button>
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    )}
                 </div>
             </header>
 
@@ -287,7 +342,7 @@ export default function LandingPage() {
                 </section>
             </main>
             <footer className="w-full border-t py-6 md:py-0">
-                <div className="container flex flex-col items-center justify-between gap-4 md:h-24 md:flex-row">
+                <div className="container mx-auto flex flex-col items-center justify-between gap-4 md:h-24 md:flex-row">
                     <div className="flex items-center gap-2">
                         <Shield className="h-5 w-5 text-teal-600" />
                         <p className="text-sm font-medium">

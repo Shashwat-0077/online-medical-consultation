@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -18,10 +17,12 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2 } from "lucide-react";
+import { useAuthStore } from "@/state/user";
+import { toast } from "@/hooks/use-toast";
 
 export default function Signup() {
     const router = useRouter();
-    const { signup, loginWithGoogle } = useAuth();
+    const { signUp, signInWithGoogle, signOut } = useAuthStore();
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [passwordConfirm, setPasswordConfirm] = useState("");
@@ -39,7 +40,29 @@ export default function Signup() {
         setLoading(true);
 
         try {
-            await signup(email, password);
+            const result = await signUp(email, password);
+            const resp = await fetch(
+                process.env.NEXT_PUBLIC_API_URL + "/user",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        id: result.user.uid,
+                        role: "guest",
+                    }),
+                }
+            );
+
+            if (!resp.ok) {
+                const error = await resp.json();
+                setError(error.message);
+                setLoading(false);
+                signOut();
+                return;
+            }
+
             router.push("/onboarding");
         } catch (err) {
             setError("Failed to create an account");
@@ -54,7 +77,29 @@ export default function Signup() {
         setLoading(true);
 
         try {
-            await loginWithGoogle();
+            const result = await signInWithGoogle();
+            const resp = await fetch(
+                process.env.NEXT_PUBLIC_API_URL + "/user",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        id: result.user.uid,
+                        role: "guest",
+                    }),
+                }
+            );
+
+            if (!resp.ok) {
+                const error = await resp.json();
+                setError(error.message);
+                setLoading(false);
+                signOut();
+                return;
+            }
+
             router.push("/onboarding");
         } catch (err) {
             setError("Failed to sign in with Google");
@@ -176,7 +221,7 @@ export default function Signup() {
                     <p className="mt-2 text-center text-sm text-muted-foreground">
                         Already have an account?{" "}
                         <Link
-                            href="/auth/login"
+                            href="/auth/signin"
                             className="font-medium text-primary hover:underline"
                         >
                             Sign in

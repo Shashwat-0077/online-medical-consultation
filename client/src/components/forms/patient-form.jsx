@@ -104,15 +104,6 @@ export default function PatientForm() {
                         </div>
                     </div>
                     <div className="space-y-2">
-                        <Label htmlFor="patient-email">Email Address</Label>
-                        <Input
-                            id="patient-email"
-                            type="email"
-                            placeholder="john.doe@example.com"
-                            required
-                        />
-                    </div>
-                    <div className="space-y-2">
                         <Label htmlFor="patient-phone">Phone Number</Label>
                         <Input
                             id="patient-phone"
