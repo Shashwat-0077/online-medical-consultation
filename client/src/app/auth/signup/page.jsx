@@ -40,7 +40,7 @@ export default function Signup() {
 
         try {
             await signup(email, password);
-            router.push("/dashboard");
+            router.push("/onboarding");
         } catch (err) {
             setError("Failed to create an account");
             console.error(err);
@@ -55,7 +55,7 @@ export default function Signup() {
 
         try {
             await loginWithGoogle();
-            router.push("/dashboard");
+            router.push("/onboarding");
         } catch (err) {
             setError("Failed to sign in with Google");
             console.error(err);
@@ -68,7 +68,7 @@ export default function Signup() {
         <div className="flex min-h-screen flex-col items-center justify-center px-4 py-8">
             <Card className="w-full max-w-md">
                 <CardHeader className="space-y-1">
-                    <CardTitle className="text-2xl font-bold text-center">
+                    <CardTitle className="text-center text-2xl font-bold">
                         Create an account
                     </CardTitle>
                     <CardDescription className="text-center">
@@ -119,7 +119,7 @@ export default function Signup() {
                         </div>
                         <Button
                             type="submit"
-                            className="w-full"
+                            className="w-full bg-teal-600 hover:bg-teal-700"
                             disabled={loading}
                         >
                             {loading ? (

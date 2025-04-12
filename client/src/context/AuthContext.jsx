@@ -9,6 +9,7 @@ import {
     signInWithPopup,
 } from "firebase/auth";
 import { auth, googleProvider } from "../lib/firebase";
+import Loading from "@/components/loading";
 
 const AuthContext = createContext({});
 
@@ -70,7 +71,7 @@ export const AuthContextProvider = ({ children }) => {
                 loginWithGoogle,
             }}
         >
-            {loading ? <div>Loading...</div> : children}
+            {loading ? <Loading /> : children}
         </AuthContext.Provider>
     );
 };
