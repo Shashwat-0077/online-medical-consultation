@@ -17,12 +17,11 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2 } from "lucide-react";
-import { useAuthStore } from "@/state/user";
-import { toast } from "@/hooks/use-toast";
+import { useAuth } from "@/context/AuthContext";
 
 export default function Signup() {
     const router = useRouter();
-    const { signUp, signInWithGoogle, signOut } = useAuthStore();
+    const { signUp, signInWithGoogle, signOut } = useAuth();
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [passwordConfirm, setPasswordConfirm] = useState("");
@@ -87,6 +86,9 @@ export default function Signup() {
                     },
                     body: JSON.stringify({
                         id: result.user.uid,
+                        displayImage: result.user.photoURL,
+                        email: result.user.email,
+                        name: result.user.displayName,
                         role: "guest",
                     }),
                 }

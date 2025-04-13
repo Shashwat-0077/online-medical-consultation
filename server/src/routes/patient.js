@@ -1,5 +1,6 @@
 const express = require("express");
 const Patient = require("../models/Patient");
+const User = require("#@/models/User.js");
 
 const router = express.Router();
 
@@ -8,9 +9,15 @@ router.post("/", async (req, res) => {
     try {
         const patient = new Patient(req.body);
         await patient.save();
-        res.status(201).send(patient);
+        await User.findOneAndUpdate(
+            { id: patient.user_id },
+            { role: "patient" },
+            { new: true }
+        );
+
+        res.status(201).json({ patient });
     } catch (error) {
-        res.status(400).send(error);
+        res.status(400).json({ message: error.message });
     }
 });
 

@@ -1,5 +1,6 @@
 const express = require("express");
 const Doctor = require("../models/Doctor");
+const User = require("#@/models/User.js");
 
 const router = express.Router();
 
@@ -8,9 +9,15 @@ router.post("/", async (req, res) => {
     try {
         const doctor = new Doctor(req.body);
         await doctor.save();
+
+        await User.findOneAndUpdate(
+            { id: doctor.user_id },
+            { role: "doctor" },
+            { new: true }
+        );
         res.status(201).json(doctor);
     } catch (error) {
-        res.status(400).json({ error: error.message });
+        res.status(400).json({ message: error.message });
     }
 });
 
@@ -36,7 +43,7 @@ router.get("/user/:userId", async (req, res) => {
         }
         res.status(200).json(doctor);
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        res.status(500).json({ message: error.message });
     }
 });
 

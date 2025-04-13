@@ -13,8 +13,6 @@ import {
     User,
     Video,
 } from "lucide-react";
-import { useAuthStore } from "@/state/user";
-import { useEffect } from "react";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -24,20 +22,10 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useAuth } from "@/context/AuthContext";
 
 export default function LandingPage() {
-    const initAuth = useAuthStore((state) => state.initAuth);
-    const user = useAuthStore((state) => state.user);
-    const loading = useAuthStore((state) => state.loading);
-    const signOut = useAuthStore((state) => state.signOut);
-
-    useEffect(() => {
-        // Initialize the auth listener and store the unsubscribe function
-        const unsubscribe = initAuth();
-
-        // Clean up the listener when the component unmounts
-        return () => unsubscribe();
-    }, [initAuth]);
+    const { user, authInitialized, signOut } = useAuth((state) => state);
 
     return (
         <div className="flex min-h-screen flex-col">
@@ -48,7 +36,7 @@ export default function LandingPage() {
                         <span className="text-xl font-bold">VirtualDoc</span>
                     </div>
 
-                    {loading ? (
+                    {!authInitialized ? (
                         <Loader2 className="h-6 w-6 animate-spin text-teal-600" />
                     ) : !user ? (
                         <div className="flex items-center gap-4">

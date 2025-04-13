@@ -7,7 +7,6 @@ const doctorSchema = new mongoose.Schema({
         required: true,
         unique: true,
     },
-    name: { type: String, default: "" },
     gender: { type: String, default: "" },
     age: { type: Number, default: "" },
     street_address: { type: String, default: "" },

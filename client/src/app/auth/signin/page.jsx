@@ -17,15 +17,15 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2 } from "lucide-react";
-import { useAuthStore } from "@/state/user";
+import { useAuth } from "@/context/AuthContext";
 
 export default function SigIn() {
     const router = useRouter();
-    const { signIn, signInWithGoogle } = useAuthStore();
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
+    const { signIn, signInWithGoogle } = useAuth();
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -62,11 +62,11 @@ export default function SigIn() {
                 return;
             }
             if (data.role === "doctor") {
-                router.push("/doctor");
+                router.push("/doctor/appointments");
                 return;
             }
             if (data.role === "patient") {
-                router.push("/patient");
+                router.push("/patient/book-appointment");
                 return;
             }
             router.push("/");
@@ -113,11 +113,11 @@ export default function SigIn() {
                 return;
             }
             if (data.role === "doctor") {
-                router.push("/doctor");
+                router.push("/doctor/appointments");
                 return;
             }
             if (data.role === "patient") {
-                router.push("/patient");
+                router.push("/patient/book-appointment");
                 return;
             }
         } catch (err) {
