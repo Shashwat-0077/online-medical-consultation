@@ -26,6 +26,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "@/hooks/use-toast";
+import Link from "next/link";
 
 export default function AppointmentsPage() {
     // Format date for display
@@ -583,12 +584,20 @@ export default function AppointmentsPage() {
                                     <Button size="sm">
                                         Complete Appointment
                                     </Button>
-                                    <Button
-                                        size="sm"
-                                        className="flex items-center gap-1"
-                                    >
-                                        <Video className="h-4 w-4" />
-                                    </Button>
+
+                                    {appt.mode === "virtual" && (
+                                        <Link
+                                            href={`/consultation?roomId=${appt._id}&userId=${user.uid}`}
+                                            target="_blank"
+                                        >
+                                            <Button
+                                                size="sm"
+                                                className="flex items-center gap-1"
+                                            >
+                                                <Video className="h-4 w-4" />
+                                            </Button>
+                                        </Link>
+                                    )}
                                 </>
                             )}
                         </div>

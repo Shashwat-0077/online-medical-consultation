@@ -3,13 +3,32 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { io } from "socket.io-client";
 import Peer from "simple-peer";
+import {
+    Card,
+    CardContent,
+    CardFooter,
+    CardHeader,
+    CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+    Mic,
+    MicOff,
+    Video,
+    VideoOff,
+    PhoneOff,
+    RefreshCw,
+} from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
-const VideoCall = ({ roomId }) => {
+const VideoCall = ({ roomId, userId }) => {
     // State that affects rendering
-    const [userId] = useState(`user-${Math.floor(Math.random() * 1000000)}`);
     const [connected, setConnected] = useState(false);
     const [error, setError] = useState(null);
     const [peerConnections, setPeerConnections] = useState({});
+    const [isAudioEnabled, setIsAudioEnabled] = useState(true);
+    const [isVideoEnabled, setIsVideoEnabled] = useState(true);
 
     // Refs for values that don't trigger re-renders and DOM elements
     const localVideoRef = useRef(null);
@@ -268,6 +287,7 @@ const VideoCall = ({ roomId }) => {
             const audioTrack = streamRef.current.getAudioTracks()[0];
             if (audioTrack) {
                 audioTrack.enabled = !audioTrack.enabled;
+                setIsAudioEnabled(audioTrack.enabled);
                 console.log("Audio track enabled:", audioTrack.enabled);
             }
         }
@@ -278,6 +298,7 @@ const VideoCall = ({ roomId }) => {
             const videoTrack = streamRef.current.getVideoTracks()[0];
             if (videoTrack) {
                 videoTrack.enabled = !videoTrack.enabled;
+                setIsVideoEnabled(videoTrack.enabled);
                 console.log("Video track enabled:", videoTrack.enabled);
             }
         }
@@ -304,56 +325,132 @@ const VideoCall = ({ roomId }) => {
 
     if (error) {
         return (
-            <div className="error-container">
-                <h3>Error</h3>
-                <p>{error}</p>
-                <button onClick={() => window.location.reload()}>Retry</button>
+            <div className="flex h-screen items-center justify-center p-4">
+                <Alert variant="destructive" className="max-w-md">
+                    <AlertTitle className="text-lg font-semibold">
+                        Connection Error
+                    </AlertTitle>
+                    <AlertDescription>
+                        <p className="mb-4">{error}</p>
+                        <Button
+                            onClick={() => window.location.reload()}
+                            className="w-full"
+                        >
+                            <RefreshCw className="mr-2 h-4 w-4" />
+                            Retry Connection
+                        </Button>
+                    </AlertDescription>
+                </Alert>
             </div>
         );
     }
 
     return (
-        <div className="video-call-container">
-            <h2>Room: {roomId}</h2>
-            <div className="connection-info">
-                Your ID: {userId}
-                <br />
-                Status:{" "}
-                {connected ? "Connected to signaling server" : "Connecting..."}
-                <br />
-                Peer connections: {Object.keys(peerConnections).length}
-            </div>
-            <div className="video-grid">
-                <div className="video-item">
-                    <h3>You</h3>
-                    <video
-                        ref={localVideoRef}
-                        muted
-                        autoPlay
-                        playsInline
-                        style={{ width: "100%", maxWidth: "400px" }}
-                    />
+        <div className="mx-auto w-full max-w-6xl p-4">
+            <div className="mb-6">
+                <div className="mb-2 flex flex-col items-start justify-between md:flex-row md:items-center">
+                    <h1 className="text-2xl font-bold">Room: {roomId}</h1>
+                    <div className="mt-2 flex items-center space-x-2 md:mt-0">
+                        <Badge
+                            variant={connected ? "success" : "secondary"}
+                            className="px-3 py-1"
+                        >
+                            {connected ? "Connected" : "Connecting..."}
+                        </Badge>
+                        <Badge variant="outline" className="px-3 py-1">
+                            Peers: {Object.keys(peerConnections).length}
+                        </Badge>
+                    </div>
                 </div>
-                <div className="video-item">
-                    <h3>Peer</h3>
-                    {!peerVideoRef.current?.srcObject && connected && (
-                        <div className="waiting-peer">
-                            Waiting for someone to join...
+                <p className="text-sm text-gray-500">Your ID: {userId}</p>
+            </div>
+
+            <div className="mb-6 grid grid-cols-1 gap-6 md:grid-cols-2">
+                {/* Local Video */}
+                <Card className="overflow-hidden">
+                    <CardHeader className="pb-2">
+                        <CardTitle className="flex items-center text-lg">
+                            <span>You</span>
+                            {!isAudioEnabled && (
+                                <MicOff className="ml-2 h-4 w-4 text-red-500" />
+                            )}
+                            {!isVideoEnabled && (
+                                <VideoOff className="ml-2 h-4 w-4 text-red-500" />
+                            )}
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-0">
+                        <div className="relative h-64 bg-gray-100 dark:bg-gray-800 md:h-80">
+                            <video
+                                ref={localVideoRef}
+                                muted
+                                autoPlay
+                                playsInline
+                                className="h-full w-full object-cover"
+                            />
+                            {!isVideoEnabled && (
+                                <div className="absolute inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50">
+                                    <VideoOff className="h-12 w-12 text-white opacity-70" />
+                                </div>
+                            )}
                         </div>
-                    )}
-                    <video
-                        ref={peerVideoRef}
-                        autoPlay
-                        playsInline
-                        style={{ width: "100%", maxWidth: "400px" }}
-                    />
-                </div>
+                    </CardContent>
+                </Card>
+
+                {/* Peer Video */}
+                <Card className="overflow-hidden">
+                    <CardHeader className="pb-2">
+                        <CardTitle className="text-lg">Peer</CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-0">
+                        <div className="relative h-64 bg-gray-100 dark:bg-gray-800 md:h-80">
+                            <video
+                                ref={peerVideoRef}
+                                autoPlay
+                                playsInline
+                                className="h-full w-full object-cover"
+                            />
+                        </div>
+                    </CardContent>
+                </Card>
             </div>
-            <div className="controls">
-                <button onClick={toggleAudio}>Toggle Audio</button>
-                <button onClick={toggleVideo}>Toggle Video</button>
-                <button onClick={endCall}>End Call</button>
-            </div>
+
+            <Card className="mt-4">
+                <CardFooter className="flex justify-center space-x-4 p-4">
+                    <Button
+                        variant={isAudioEnabled ? "outline" : "destructive"}
+                        size="icon"
+                        className="h-12 w-12"
+                        onClick={toggleAudio}
+                    >
+                        {isAudioEnabled ? (
+                            <Mic className="h-5 w-5" />
+                        ) : (
+                            <MicOff className="h-5 w-5" />
+                        )}
+                    </Button>
+                    <Button
+                        variant={isVideoEnabled ? "outline" : "destructive"}
+                        size="icon"
+                        className="h-12 w-12"
+                        onClick={toggleVideo}
+                    >
+                        {isVideoEnabled ? (
+                            <Video className="h-5 w-5" />
+                        ) : (
+                            <VideoOff className="h-5 w-5" />
+                        )}
+                    </Button>
+                    <Button
+                        variant="destructive"
+                        onClick={endCall}
+                        className="h-12 px-6"
+                    >
+                        <PhoneOff className="mr-2 h-5 w-5" />
+                        End Call
+                    </Button>
+                </CardFooter>
+            </Card>
         </div>
     );
 };

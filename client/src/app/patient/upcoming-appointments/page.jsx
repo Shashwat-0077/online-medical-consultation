@@ -21,6 +21,7 @@ import {
     TooltipProvider,
     TooltipTrigger,
 } from "@/components/ui/tooltip";
+import Link from "next/link";
 
 const getStatusColor = (status) => {
     switch (status) {
@@ -166,16 +167,24 @@ const Page = () => {
                                     </TooltipContent>
                                 </Tooltip>
 
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <Button>
-                                            <Video />
-                                        </Button>
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                        <p>Join the call</p>
-                                    </TooltipContent>
-                                </Tooltip>
+                                {appt.mode === "virtual" &&
+                                    appt.status === "confirmed" && (
+                                        <Tooltip>
+                                            <TooltipTrigger asChild>
+                                                <Link
+                                                    href={`/consultation?roomId=${appt._id}&userId=${user.uid}`}
+                                                    target="_blank"
+                                                >
+                                                    <Button>
+                                                        <Video />
+                                                    </Button>
+                                                </Link>
+                                            </TooltipTrigger>
+                                            <TooltipContent>
+                                                <p>Join the call</p>
+                                            </TooltipContent>
+                                        </Tooltip>
+                                    )}
                             </TooltipProvider>
                         </div>
                     </CardContent>
