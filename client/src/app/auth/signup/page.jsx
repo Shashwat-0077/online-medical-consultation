@@ -48,7 +48,7 @@ export default function Signup() {
                         "Content-Type": "application/json",
                     },
                     body: JSON.stringify({
-                        id: result.user.uid,
+                        _id: result.user.uid,
                         role: "guest",
                     }),
                 }
@@ -77,6 +77,8 @@ export default function Signup() {
 
         try {
             const result = await signInWithGoogle();
+            console.log(result.user.uid);
+            console.log(result.user.email);
             const resp = await fetch(
                 process.env.NEXT_PUBLIC_API_URL + "/user",
                 {
@@ -85,7 +87,7 @@ export default function Signup() {
                         "Content-Type": "application/json",
                     },
                     body: JSON.stringify({
-                        id: result.user.uid,
+                        _id: result.user.uid,
                         displayImage: result.user.photoURL,
                         email: result.user.email,
                         name: result.user.displayName,

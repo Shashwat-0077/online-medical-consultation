@@ -1,10 +1,9 @@
 const mongoose = require("mongoose");
 
 const userSchema = new mongoose.Schema({
-    id: {
+    _id: {
         type: String,
         required: [true, "User ID is required"],
-        unique: [true, "User with that account already exists"],
     },
     role: {
         type: String,

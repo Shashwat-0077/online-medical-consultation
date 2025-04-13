@@ -1,7 +1,7 @@
 const express = require("express");
 const Doctor = require("../models/Doctor");
 const User = require("#@/models/User.js");
-
+const ObjectId = require("mongoose").Types.ObjectId;
 const router = express.Router();
 
 // Create a new doctor
@@ -10,27 +10,14 @@ router.post("/", async (req, res) => {
         const doctor = new Doctor(req.body);
         await doctor.save();
 
-        await User.findOneAndUpdate(
-            { id: doctor.user_id },
+        await User.findByIdAndUpdate(
+            doctor.user_id,
             { role: "doctor" },
             { new: true }
         );
         res.status(201).json(doctor);
     } catch (error) {
         res.status(400).json({ message: error.message });
-    }
-});
-
-// Get a specific doctor by ID
-router.get("/:id", async (req, res) => {
-    try {
-        const doctor = await Doctor.findById(req.params.id);
-        if (!doctor) {
-            return res.status(404).json({ error: "Doctor not found" });
-        }
-        res.status(200).json(doctor);
-    } catch (error) {
-        res.status(500).json({ error: error.message });
     }
 });
 
@@ -44,6 +31,90 @@ router.get("/user/:userId", async (req, res) => {
         res.status(200).json(doctor);
     } catch (error) {
         res.status(500).json({ message: error.message });
+    }
+});
+
+// Route to get doctors by city
+router.get("/city/:city", async (req, res) => {
+    try {
+        const doctors = await Doctor.aggregate([
+            {
+                $match: { city: req.params.city },
+            },
+            {
+                $lookup: {
+                    from: "users",
+                    localField: "user_id",
+                    foreignField: "_id",
+                    as: "user",
+                },
+            },
+            {
+                $unwind: "$user",
+            },
+            {
+                $replaceRoot: {
+                    newRoot: { $mergeObjects: ["$user", "$$ROOT"] },
+                },
+            },
+            {
+                $project: {
+                    user: 0,
+                    user_id: 0,
+                },
+            },
+        ]);
+
+        if (doctors.length === 0) {
+            return res
+                .status(404)
+                .json({ message: "No doctors found in this city" });
+        }
+        res.status(200).json(doctors);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// Get a specific doctor by ID
+router.get("/:id", async (req, res) => {
+    try {
+        const doctor = await Doctor.aggregate([
+            {
+                $match: {
+                    _id: new ObjectId(req.params.id),
+                },
+            },
+            {
+                $lookup: {
+                    from: "users",
+                    localField: "user_id",
+                    foreignField: "_id",
+                    as: "user",
+                },
+            },
+            {
+                $unwind: "$user",
+            },
+            {
+                $replaceRoot: {
+                    newRoot: { $mergeObjects: ["$user", "$$ROOT"] },
+                },
+            },
+            {
+                $project: {
+                    user: 0,
+                    user_id: 0,
+                },
+            },
+        ]);
+
+        if (doctor.length === 0) {
+            return res.status(404).json({ error: "Doctor not found" });
+        }
+        res.status(200).json(doctor[0]);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
     }
 });
 

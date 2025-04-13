@@ -14,6 +14,11 @@ const sidebarItems = [
         icon: Calendar,
     },
     {
+        title: "Upcoming Appointments",
+        href: "/patient/upcoming-appointments",
+        icon: Calendar,
+    },
+    {
         title: "Medical History",
         href: "/patient/medical-history",
         icon: ClipboardList,

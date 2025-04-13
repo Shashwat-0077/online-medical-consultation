@@ -45,6 +45,12 @@ export default function useCheckDoctor() {
                 if (data.role === "doctor") {
                     setIsDoctor(true);
                 } else if (data.role === "guest") {
+                    toast({
+                        title: "Onboarding Required",
+                        description:
+                            "Please complete onboarding to access this page.",
+                        variant: "destructive",
+                    });
                     router.push("/onboarding");
                 } else {
                     toast({

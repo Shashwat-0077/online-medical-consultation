@@ -47,6 +47,12 @@ export default function useCheckPatient() {
                 if (data.role === "patient") {
                     setIsPatient(true);
                 } else if (data.role === "guest") {
+                    toast({
+                        title: "Onboarding Required",
+                        description:
+                            "Please complete onboarding to access this page.",
+                        variant: "destructive",
+                    });
                     router.push("/onboarding");
                 } else {
                     toast({
@@ -68,5 +74,5 @@ export default function useCheckPatient() {
         checkPatientRole();
     }, [authInitialized, user, router]);
 
-    return { isLoading, isPatient, user };
+    return { isLoading, isPatient, user, authInitialized };
 }

@@ -10,22 +10,23 @@ connectDB();
 
 // Create Express app
 const app = express();
-app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 
 app.use(
     cors({
         origin: process.env.FRONTEND_URL || "http://localhost:3000",
-        methods: ["GET", "POST"],
+        methods: ["GET", "POST", "PUT", "DELETE"],
+        allowedHeaders: ["Content-Type", "Authorization"],
         credentials: true,
     })
 );
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-app.use("/api/patient", require("./routes/patient"));
-app.use("/api/doctor", require("./routes/doctor"));
-app.use("/api/appointments", require("./routes/appointments"));
 app.use("/api/user", require("./routes/user"));
+app.use("/api/doctor", require("./routes/doctor"));
+app.use("/api/patient", require("./routes/patient"));
+app.use("/api/appointments", require("./routes/appointments"));
+app.use("/api/consultation", require("./routes/consultation"));
 
 const server = http.createServer(app);
 const io = new Server(server, {

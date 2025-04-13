@@ -1,13 +1,28 @@
 const mongoose = require("mongoose");
 
 const appointmentSchema = new mongoose.Schema({
-    doctorId: { type: mongoose.Schema.Types.ObjectId, ref: "Doctor" },
-    patientId: { type: mongoose.Schema.Types.ObjectId, ref: "Patient" },
-    date: { type: Date, default: Date.now },
-    time: { type: String, default: "" },
+    doctor_id: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Doctor",
+        required: true,
+    },
+    patient_id: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Patient",
+        required: true,
+    },
+    date: { type: Date, default: null },
+    from_time: { type: String, default: "" },
+    to_time: { type: String, default: "" },
+    reason: { type: String, default: "" },
+    mode: {
+        type: String,
+        enum: ["in-person", "virtual"],
+        default: "in-person",
+    },
     status: {
         type: String,
-        enum: ["pending", "completed", "canceled"],
+        enum: ["pending", "confirmed", "cancelled", "completed"],
         default: "pending",
     },
 });
@@ -18,14 +33,36 @@ appointmentSchema.pre("save", async function (next) {
     const Patient = mongoose.model("Patient");
 
     try {
-        const doctorExists = await Doctor.findById(this.doctorId);
+        const doctorExists = await Doctor.findById(this.doctor_id);
         if (!doctorExists) {
             throw new Error("Doctor with the provided ID does not exist.");
         }
 
-        const patientExists = await Patient.findById(this.patientId);
+        const patientExists = await Patient.findById(this.patient_id);
         if (!patientExists) {
             throw new Error("Patient with the provided ID does not exist.");
+        }
+
+        next();
+    } catch (error) {
+        next(error);
+    }
+});
+
+// Middleware to check if an appointment already exists for the same doctor and patient
+appointmentSchema.pre("save", async function (next) {
+    try {
+        const existingAppointment = await mongoose
+            .model("Appointment")
+            .findOne({
+                doctor_id: this.doctor_id,
+                patient_id: this.patient_id,
+            });
+
+        if (existingAppointment) {
+            throw new Error(
+                "An appointment already exists for the same doctor, patient."
+            );
         }
 
         next();

@@ -9,8 +9,8 @@ router.post("/", async (req, res) => {
     try {
         const patient = new Patient(req.body);
         await patient.save();
-        await User.findOneAndUpdate(
-            { id: patient.user_id },
+        await User.findByIdAndUpdate(
+            patient.user_id,
             { role: "patient" },
             { new: true }
         );
@@ -28,22 +28,49 @@ router.get("/:id", async (req, res) => {
         if (!patient) {
             return res.status(404).send({ message: "Patient not found" });
         }
-        res.status(200).send(patient);
+        res.status(200).json(patient);
     } catch (error) {
-        res.status(500).send(error);
+        res.status(500).json({ message: error.message });
     }
 });
 
 // Route to find a patient by user_id
 router.get("/user/:userId", async (req, res) => {
     try {
-        const patient = await Patient.findOne({ user_id: req.params.userId });
+        const patient = await Patient.aggregate([
+            { $match: { user_id: req.params.userId } },
+            {
+                $lookup: {
+                    from: "users",
+                    localField: "user_id",
+                    foreignField: "_id",
+                    as: "user_details",
+                },
+            },
+            { $unwind: "$user_details" },
+            {
+                $replaceRoot: {
+                    newRoot: { $mergeObjects: ["$user_details", "$$ROOT"] },
+                },
+            },
+            {
+                $project: {
+                    user_details: 0,
+                    user_id: 0,
+                },
+            },
+        ]);
+
+        const flattenedPatient = patient.length > 0 ? patient[0] : null;
+
+        console.log(flattenedPatient);
+
         if (!patient) {
-            return res.status(404).send({ message: "Patient not found" });
+            return res.status(404).json({ message: "Patient not found" });
         }
-        res.status(200).send(patient);
+        res.status(200).json(flattenedPatient ?? {});
     } catch (error) {
-        res.status(500).send(error);
+        res.status(500).json({ message: error.message });
     }
 });
 
