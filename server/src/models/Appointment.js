@@ -25,6 +25,22 @@ const appointmentSchema = new mongoose.Schema({
         enum: ["pending", "confirmed", "cancelled", "completed"],
         default: "pending",
     },
+    symptoms: {
+        type: String,
+        default: null,
+    },
+    diagnosis: {
+        type: String,
+        default: null,
+    },
+    prescription: {
+        type: String,
+        default: null,
+    },
+    notes: {
+        type: String,
+        default: null,
+    },
 });
 
 // Middleware to check if doctorId and patientId exist

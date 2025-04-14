@@ -64,7 +64,19 @@ export default function AppointmentsPage() {
                     throw new Error("Failed to fetch appointments");
                 }
                 const data = await res.json();
-                setAppointments(data);
+
+                setAppointments(
+                    data.filter((appt) => {
+                        const appointmentDate = new Date(appt.date);
+                        const today = new Date();
+                        today.setHours(0, 0, 0, 0);
+                        return (
+                            appointmentDate >= today &&
+                            appt.status !== "cancelled" &&
+                            appt.status !== "completed"
+                        );
+                    })
+                );
             } catch (err) {
                 console.error("Error fetching appointments:", err);
                 toast({
@@ -581,9 +593,13 @@ export default function AppointmentsPage() {
 
                             {appt.status === "confirmed" && (
                                 <>
-                                    <Button size="sm">
-                                        Complete Appointment
-                                    </Button>
+                                    <Link
+                                        href={`/doctor/appointments/${appt._id}`}
+                                    >
+                                        <Button size="sm">
+                                            Complete Appointment
+                                        </Button>
+                                    </Link>
 
                                     {appt.mode === "virtual" && (
                                         <Link

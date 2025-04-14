@@ -13,8 +13,8 @@ const sidebarItems = [
         icon: Calendar,
     },
     {
-        title: "Patients Treated",
-        href: "/doctor/patients-treated",
+        title: "Completed Appointments",
+        href: "/doctor/completed-appointments",
         icon: Users,
     },
     {
