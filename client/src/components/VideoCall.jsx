@@ -19,6 +19,7 @@ import {
     VideoOff,
     PhoneOff,
     RefreshCw,
+    UserX,
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
@@ -29,6 +30,7 @@ const VideoCall = ({ roomId, userId }) => {
     const [peerConnections, setPeerConnections] = useState({});
     const [isAudioEnabled, setIsAudioEnabled] = useState(true);
     const [isVideoEnabled, setIsVideoEnabled] = useState(true);
+    const [roomFull, setRoomFull] = useState(false);
 
     // Refs for values that don't trigger re-renders and DOM elements
     const localVideoRef = useRef(null);
@@ -39,7 +41,7 @@ const VideoCall = ({ roomId, userId }) => {
 
     // Initialize socket connection
     useEffect(() => {
-        const socketUrl = "http://localhost:5000";
+        const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL;
         console.log("Connecting to socket server at:", socketUrl);
 
         const newSocket = io(socketUrl, {
@@ -59,6 +61,18 @@ const VideoCall = ({ roomId, userId }) => {
             setError(
                 "Failed to connect to the video server. Please try again later."
             );
+        });
+
+        // Add event listener for room-full event
+        newSocket.on("room-full", () => {
+            console.log("Room is full, cannot join");
+            setRoomFull(true);
+            setError("This room already has 2 participants.");
+
+            // Stop local stream
+            if (streamRef.current) {
+                streamRef.current.getTracks().forEach((track) => track.stop());
+            }
         });
 
         return () => {
@@ -84,9 +98,21 @@ const VideoCall = ({ roomId, userId }) => {
                     localVideoRef.current.srcObject = currentStream;
                 }
 
-                // Join the room once we have stream and socket
-                socketRef.current.emit("join-room", roomId, userId);
-                setConnected(true);
+                // Check room occupancy before joining
+                socketRef.current.emit("check-room", roomId, (roomData) => {
+                    if (roomData && roomData.userCount >= 2) {
+                        setRoomFull(true);
+                        setError("This room already has 2 participants.");
+                        // Stop the stream
+                        currentStream
+                            .getTracks()
+                            .forEach((track) => track.stop());
+                    } else {
+                        // Join the room once we have stream and socket and room is not full
+                        socketRef.current.emit("join-room", roomId, userId);
+                        setConnected(true);
+                    }
+                });
             })
             .catch((error) => {
                 console.error("Error accessing media devices:", error);
@@ -98,16 +124,30 @@ const VideoCall = ({ roomId, userId }) => {
 
     // Handle socket events
     useEffect(() => {
-        if (!socketRef.current || !roomId) return;
+        if (!socketRef.current || !roomId || roomFull) return;
 
         // Remove old listeners before adding new ones
         socketRef.current.off("user-connected");
         socketRef.current.off("signal");
         socketRef.current.off("user-disconnected");
+        socketRef.current.off("room-full");
 
         // Handle new user connection
         socketRef.current.on("user-connected", (newUserId) => {
             console.log("New user connected:", newUserId);
+
+            // Check if adding this user would exceed our limit of 2 users
+            const currentUsers = Object.keys(peersRef.current).length;
+
+            if (currentUsers >= 1) {
+                // We already have one peer and we are the second user,
+                // so don't accept any more connections
+                console.log(
+                    "Already have maximum peers, ignoring new connection"
+                );
+                return;
+            }
+
             if (streamRef.current) {
                 createPeer(newUserId);
             }
@@ -116,6 +156,16 @@ const VideoCall = ({ roomId, userId }) => {
         // Handle incoming signal
         socketRef.current.on("signal", ({ userId: signalUserId, signal }) => {
             console.log("Received signal from:", signalUserId);
+
+            // If we already have a peer and this signal is from someone else, ignore it
+            const currentPeerIds = Object.keys(peersRef.current);
+            if (
+                currentPeerIds.length >= 1 &&
+                !currentPeerIds.includes(signalUserId)
+            ) {
+                console.log("Ignoring signal from additional user");
+                return;
+            }
 
             if (peersRef.current[signalUserId]) {
                 console.log("Forwarding signal to existing peer");
@@ -141,7 +191,7 @@ const VideoCall = ({ roomId, userId }) => {
                 });
             }
         });
-    }, [roomId]);
+    }, [roomId, roomFull]);
 
     // Clean up media stream on unmount
     useEffect(() => {
@@ -328,17 +378,10 @@ const VideoCall = ({ roomId, userId }) => {
             <div className="flex h-screen items-center justify-center p-4">
                 <Alert variant="destructive" className="max-w-md">
                     <AlertTitle className="text-lg font-semibold">
-                        Connection Error
+                        {roomFull ? "Room Full" : "Connection Error"}
                     </AlertTitle>
                     <AlertDescription>
                         <p className="mb-4">{error}</p>
-                        <Button
-                            onClick={() => window.location.reload()}
-                            className="w-full"
-                        >
-                            <RefreshCw className="mr-2 h-4 w-4" />
-                            Retry Connection
-                        </Button>
                     </AlertDescription>
                 </Alert>
             </div>
@@ -410,6 +453,17 @@ const VideoCall = ({ roomId, userId }) => {
                                 playsInline
                                 className="h-full w-full object-cover"
                             />
+                            {Object.keys(peerConnections).length === 0 && (
+                                <div className="absolute inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50">
+                                    <p className="text-center text-white">
+                                        Waiting for another person to join...
+                                        <br />
+                                        <span className="text-sm opacity-70">
+                                            (Limited to 2 participants per room)
+                                        </span>
+                                    </p>
+                                </div>
+                            )}
                         </div>
                     </CardContent>
                 </Card>

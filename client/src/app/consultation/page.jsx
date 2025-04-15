@@ -129,7 +129,6 @@ export default function RoomPage({ searchParams }) {
 
     return (
         <div className="room-container">
-            <h1>Video Call Room</h1>
             <VideoCall roomId={roomId} userId={userId} />
         </div>
     );
