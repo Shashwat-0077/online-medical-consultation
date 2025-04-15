@@ -53,13 +53,11 @@ export default function RoomPage({ searchParams }) {
             }
 
             const data = await response.json();
-            console.log(data);
 
             if (data.status === "confirmed") {
                 setRoomConfirmed(true);
                 if (!data.patient || !data.doctor) {
                     setError("Invalid appointment data");
-                    console.log("Invalid appointment data");
                     setLoading(false);
                     return;
                 }
@@ -70,13 +68,11 @@ export default function RoomPage({ searchParams }) {
                         data.doctor.user_id === user.uid
                     )
                 ) {
-                    console.log("Unauthorized user");
                     setUnauthorized(true);
                     setLoading(false);
                     return;
                 }
             } else {
-                console.log("Room not confirmed");
                 setRoomConfirmed(false);
                 setLoading(false);
             }

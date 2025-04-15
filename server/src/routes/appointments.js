@@ -54,6 +54,9 @@ router.get("/doctor/:doctorId", async (req, res) => {
                     status: 1,
                     doctor: "$doctor_id", // just the ObjectId
                     patient: 1, // flattened patient
+                    notes: 1,
+                    symptoms: 1,
+                    diagnosis: 1,
                 },
             },
         ]);
@@ -115,6 +118,9 @@ router.get("/patient/:patientId", async (req, res) => {
                     status: 1,
                     patient: "$patient_id", // just the ObjectId
                     doctor: 1, // flattened doctor
+                    notes: 1,
+                    symptoms: 1,
+                    diagnosis: 1,
                 },
             },
         ]);

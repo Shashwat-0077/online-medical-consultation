@@ -55,7 +55,6 @@ export default function SigIn() {
             }
 
             const data = await resp.json();
-            console.log(resp);
 
             if (data.role === "guest") {
                 router.push("/onboarding");
@@ -106,7 +105,6 @@ export default function SigIn() {
             }
 
             const data = await resp.json();
-            console.log(resp);
 
             if (data.role === "guest") {
                 router.push("/onboarding");
