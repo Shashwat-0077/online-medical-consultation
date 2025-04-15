@@ -129,6 +129,164 @@ export default function AppointmentsPage() {
         }));
     };
 
+    // const handleAcceptAppointment = async () => {
+    //     if (!currentAppointment) return;
+
+    //     // Validate inputs
+    //     if (!appointmentFormState.date) {
+    //         toast({
+    //             title: "Missing information",
+    //             description: "Please select a date for the appointment",
+    //             variant: "destructive",
+    //         });
+    //         return;
+    //     }
+
+    //     if (!appointmentFormState.timeFrom || !appointmentFormState.timeTo) {
+    //         toast({
+    //             title: "Missing information",
+    //             description: "Please select both start and end times",
+    //             variant: "destructive",
+    //         });
+    //         return;
+    //     }
+
+    //     const response = await fetch(
+    //         `${process.env.NEXT_PUBLIC_API_URL}/doctor/get-working-hours/${user.uid}`,
+    //         {
+    //             method: "GET",
+    //             headers: {
+    //                 "Content-Type": "application/json",
+    //             },
+    //         }
+    //     );
+
+    //     if (!response.ok) {
+    //         const error = await response.json();
+    //         toast({
+    //             title: "Error",
+    //             description: error.message || "Failed to fetch working hours",
+    //             variant: "destructive",
+    //         });
+    //         return;
+    //     }
+    //     const workingHours = await response.json();
+    //     console.log(workingHours);
+
+    //     // Check if from_time is earlier than to_time
+    //     const [fromHours, fromMinutes] = appointmentFormState.timeFrom
+    //         .split(":")
+    //         .map(Number);
+    //     const [toHours, toMinutes] = appointmentFormState.timeTo
+    //         .split(":")
+    //         .map(Number);
+
+    //     const fromTimeInMinutes = fromHours * 60 + fromMinutes;
+    //     const toTimeInMinutes = toHours * 60 + toMinutes;
+
+    //     if (fromTimeInMinutes >= toTimeInMinutes) {
+    //         toast({
+    //             title: "Invalid time range",
+    //             description: "Start time must be earlier than end time",
+    //             variant: "destructive",
+    //         });
+    //         return;
+    //     }
+
+    //     // Check if the appointment date is in the past
+    //     const appointmentDate = new Date(appointmentFormState.date);
+    //     const today = new Date();
+    //     today.setHours(0, 0, 0, 0); // Reset time part to compare only dates
+
+    //     if (appointmentDate < today) {
+    //         toast({
+    //             title: "Invalid date",
+    //             description: "Appointment date cannot be in the past",
+    //             variant: "destructive",
+    //         });
+    //         return;
+    //     }
+
+    //     // If appointment is today, check if the time is not in the past
+    //     if (
+    //         appointmentDate.getDate() === today.getDate() &&
+    //         appointmentDate.getMonth() === today.getMonth() &&
+    //         appointmentDate.getFullYear() === today.getFullYear()
+    //     ) {
+    //         const currentTime = new Date();
+    //         const appointmentTime = new Date(appointmentDate);
+
+    //         // Parse time in format "HH:MM" and set to appointment date
+    //         appointmentTime.setHours(fromHours, fromMinutes, 0, 0);
+
+    //         if (appointmentTime < currentTime) {
+    //             toast({
+    //                 title: "Invalid time",
+    //                 description: "Appointment time cannot be in the past",
+    //                 variant: "destructive",
+    //             });
+    //             return;
+    //         }
+    //     }
+
+    //     try {
+    //         const response = await fetch(
+    //             `${process.env.NEXT_PUBLIC_API_URL}/appointments/${currentAppointment._id}`,
+    //             {
+    //                 method: "PUT",
+    //                 headers: {
+    //                     "Content-Type": "application/json",
+    //                 },
+    //                 body: JSON.stringify({
+    //                     status: "confirmed",
+    //                     date: appointmentFormState.date,
+    //                     from_time: appointmentFormState.timeFrom,
+    //                     to_time: appointmentFormState.timeTo,
+    //                 }),
+    //             }
+    //         );
+
+    //         if (!response.ok) {
+    //             const error = await response.json();
+    //             toast({
+    //                 title: "Error",
+    //                 description:
+    //                     error.message || "Failed to confirm appointment",
+    //                 variant: "destructive",
+    //             });
+    //             return;
+    //         }
+
+    //         // Update the local state to reflect the changes
+    //         setAppointments(
+    //             appointments.map((appt) =>
+    //                 appt._id === currentAppointment._id
+    //                     ? {
+    //                           ...appt,
+    //                           status: "confirmed",
+    //                           date: appointmentFormState.date,
+    //                           from_time: appointmentFormState.timeFrom,
+    //                           to_time: appointmentFormState.timeTo,
+    //                       }
+    //                     : appt
+    //             )
+    //         );
+
+    //         toast({
+    //             title: "Success",
+    //             description: "Appointment has been confirmed",
+    //             variant: "default",
+    //         });
+    //     } catch (error) {
+    //         console.error("Error accepting appointment:", error);
+    //         toast({
+    //             title: "Error",
+    //             description: "Failed to confirm appointment. Please try again.",
+    //             variant: "destructive",
+    //         });
+    //     }
+    // };
+
     const handleAcceptAppointment = async () => {
         if (!currentAppointment) return;
 
@@ -151,8 +309,143 @@ export default function AppointmentsPage() {
             return;
         }
 
+        // Fetch doctor's working hours
         try {
             const response = await fetch(
+                `${process.env.NEXT_PUBLIC_API_URL}/doctor/get-working-hours/${user.uid}`,
+                {
+                    method: "GET",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                }
+            );
+
+            if (!response.ok) {
+                const error = await response.json();
+                toast({
+                    title: "Error",
+                    description:
+                        error.message || "Failed to fetch working hours",
+                    variant: "destructive",
+                });
+                return;
+            }
+            const workingHours = await response.json();
+            console.log(workingHours);
+
+            // Check if from_time is earlier than to_time
+            const [fromHours, fromMinutes] = appointmentFormState.timeFrom
+                .split(":")
+                .map(Number);
+            const [toHours, toMinutes] = appointmentFormState.timeTo
+                .split(":")
+                .map(Number);
+
+            const fromTimeInMinutes = fromHours * 60 + fromMinutes;
+            const toTimeInMinutes = toHours * 60 + toMinutes;
+
+            if (fromTimeInMinutes >= toTimeInMinutes) {
+                toast({
+                    title: "Invalid time range",
+                    description: "Start time must be earlier than end time",
+                    variant: "destructive",
+                });
+                return;
+            }
+
+            // Check if the appointment date is in the past
+            const appointmentDate = new Date(appointmentFormState.date);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0); // Reset time part to compare only dates
+
+            if (appointmentDate < today) {
+                toast({
+                    title: "Invalid date",
+                    description: "Appointment date cannot be in the past",
+                    variant: "destructive",
+                });
+                return;
+            }
+
+            // If appointment is today, check if the time is not in the past
+            if (
+                appointmentDate.getDate() === today.getDate() &&
+                appointmentDate.getMonth() === today.getMonth() &&
+                appointmentDate.getFullYear() === today.getFullYear()
+            ) {
+                const currentTime = new Date();
+                const appointmentTime = new Date(appointmentDate);
+
+                // Parse time in format "HH:MM" and set to appointment date
+                appointmentTime.setHours(fromHours, fromMinutes, 0, 0);
+
+                if (appointmentTime < currentTime) {
+                    toast({
+                        title: "Invalid time",
+                        description: "Appointment time cannot be in the past",
+                        variant: "destructive",
+                    });
+                    return;
+                }
+            }
+
+            // Check if appointment falls within doctor's working hours
+            const daysOfWeek = [
+                "sunday",
+                "monday",
+                "tuesday",
+                "wednesday",
+                "thursday",
+                "friday",
+                "saturday",
+            ];
+            const appointmentDay = daysOfWeek[appointmentDate.getDay()];
+            const workingHoursKey = `${appointmentDay}_hours`;
+
+            // Check if doctor works on this day
+            if (
+                !workingHours[workingHoursKey] ||
+                !workingHours[workingHoursKey].from ||
+                !workingHours[workingHoursKey].to
+            ) {
+                toast({
+                    title: "Unavailable",
+                    description: `Doctor is not available on ${appointmentDay.charAt(0).toUpperCase() + appointmentDay.slice(1)}s`,
+                    variant: "destructive",
+                });
+                return;
+            }
+
+            // Check if appointment time falls within working hours
+            const [workFromHours, workFromMinutes] = workingHours[
+                workingHoursKey
+            ].from
+                .split(":")
+                .map(Number);
+            const [workToHours, workToMinutes] = workingHours[
+                workingHoursKey
+            ].to
+                .split(":")
+                .map(Number);
+
+            const workFromInMinutes = workFromHours * 60 + workFromMinutes;
+            const workToInMinutes = workToHours * 60 + workToMinutes;
+
+            if (
+                fromTimeInMinutes < workFromInMinutes ||
+                toTimeInMinutes > workToInMinutes
+            ) {
+                toast({
+                    title: "Outside working hours",
+                    description: `Doctor's working hours on ${appointmentDay.charAt(0).toUpperCase() + appointmentDay.slice(1)}s are from ${workingHours[workingHoursKey].from} to ${workingHours[workingHoursKey].to}`,
+                    variant: "destructive",
+                });
+                return;
+            }
+
+            // Continue with appointment confirmation
+            const appointmentResponse = await fetch(
                 `${process.env.NEXT_PUBLIC_API_URL}/appointments/${currentAppointment._id}`,
                 {
                     method: "PUT",
@@ -168,8 +461,8 @@ export default function AppointmentsPage() {
                 }
             );
 
-            if (!response.ok) {
-                const error = await response.json();
+            if (!appointmentResponse.ok) {
+                const error = await appointmentResponse.json();
                 toast({
                     title: "Error",
                     description:
@@ -574,6 +867,16 @@ function AppointmentCard({
             </CardContent>
 
             <CardFooter className="flex justify-end gap-2 pt-2">
+                {appt.status === "confirmed" ? (
+                    <Button
+                        variant="destructive"
+                        onClick={handleDeclineAppointment}
+                    >
+                        Delete Appointment
+                    </Button>
+                ) : (
+                    <></>
+                )}
                 <Dialog onOpenChange={(open) => open && onDialogOpen(appt)}>
                     <DialogTrigger asChild>
                         <Button

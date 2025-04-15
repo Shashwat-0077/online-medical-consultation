@@ -4,7 +4,7 @@ import { DashboardSidebar } from "@/components/dashboard-sidebar";
 import Loading from "@/components/loading";
 import { toast } from "@/hooks/use-toast";
 import useCheckPatient from "@/hooks/useCheckPatient";
-import { Calendar, NotebookPen, Clock } from "lucide-react";
+import { Calendar, NotebookPen, OctagonX, Clock } from "lucide-react";
 import { useEffect, useState } from "react";
 
 const sidebarItems = [
@@ -22,6 +22,11 @@ const sidebarItems = [
         title: "Completed Appointments",
         href: "/patient/completed-appointments",
         icon: Clock,
+    },
+    {
+        title: "Cancelled Appointments",
+        href: "/patient/cancelled-appointments",
+        icon: OctagonX,
     },
 ];
 

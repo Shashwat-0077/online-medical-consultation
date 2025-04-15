@@ -3,8 +3,7 @@ import { DashboardSidebar } from "@/components/dashboard-sidebar";
 import Loading from "@/components/loading";
 import { toast } from "@/hooks/use-toast";
 import useCheckDoctor from "@/hooks/useCheckDoctor";
-import { Calendar, Users, MessageSquare } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { Calendar, Users, OctagonX } from "lucide-react";
 import { useEffect, useState } from "react";
 
 const sidebarItems = [
@@ -19,9 +18,9 @@ const sidebarItems = [
         icon: Users,
     },
     {
-        title: "Feedback",
-        href: "/doctor/feedback",
-        icon: MessageSquare,
+        title: "Cancelled Appointments",
+        href: "/doctor/cancelled-appointments",
+        icon: OctagonX,
     },
 ];
 

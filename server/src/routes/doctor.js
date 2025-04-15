@@ -118,6 +118,27 @@ router.get("/:id", async (req, res) => {
     }
 });
 
+router.get("/get-working-hours/:id", async (req, res) => {
+    try {
+        const doctor = await Doctor.findOne({ user_id: req.params.id });
+        if (!doctor) {
+            return res.status(404).json({ error: "Doctor not found" });
+        }
+
+        res.status(200).json({
+            monday_hours: doctor.monday_hours,
+            tuesday_hours: doctor.tuesday_hours,
+            wednesday_hours: doctor.wednesday_hours,
+            thursday_hours: doctor.thursday_hours,
+            friday_hours: doctor.friday_hours,
+            saturday_hours: doctor.saturday_hours,
+            sunday_hours: doctor.sunday_hours,
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // Update a doctor by ID
 router.put("/:id", async (req, res) => {
     try {
