@@ -457,11 +457,10 @@ export default function AppointmentsPage() {
                                                 appt.patient.street_address,
                                                 appt.patient.city,
                                                 appt.patient.state,
-                                                appt.patient.zip_code,
+                                                appt.patient.country,
                                             ]
                                                 .filter(Boolean)
-                                                .join(", ") ||
-                                                "No address specified"}
+                                                .join(", ") || "Not specified"}
                                         </p>
                                     </div>
 

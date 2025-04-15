@@ -203,10 +203,14 @@ const CompletionPage = ({ params }) => {
                             <div className="font-bold">Address: </div>
                             <div className="truncate">
                                 <span>
-                                    {appointment.patient.street_address},{" "}
-                                    {appointment.patient.city},{" "}
-                                    {appointment.patient.state}{" "}
-                                    {appointment.patient.zip_code}
+                                    {[
+                                        appointment.patient.street_address,
+                                        appointment.patient.city,
+                                        appointment.patient.state,
+                                        appointment.patient.country,
+                                    ]
+                                        .filter(Boolean)
+                                        .join(", ") || "Not specified"}
                                 </span>
                             </div>
                         </div>

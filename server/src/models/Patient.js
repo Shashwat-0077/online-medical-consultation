@@ -12,7 +12,7 @@ const patientSchema = new mongoose.Schema({
     street_address: { type: String, default: "" },
     city: { type: String, default: "" },
     state: { type: String, default: "" },
-    zip_code: { type: String, default: "" },
+    country: { type: String, default: "" },
     phone: { type: String, default: "" },
     emergency_contact_name: { type: String, default: "" },
     emergency_contact_phone: { type: String, default: "" },

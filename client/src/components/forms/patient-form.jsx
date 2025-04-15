@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
@@ -24,6 +24,7 @@ import {
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import { toast } from "@/hooks/use-toast";
+import { Country, State, City } from "country-state-city";
 
 // Define form validation schema
 const formSchema = z.object({
@@ -38,9 +39,9 @@ const formSchema = z.object({
     streetAddress: z
         .string()
         .min(3, { message: "Please enter a valid address." }),
-    city: z.string().min(2, { message: "Please enter a city." }),
-    state: z.string().min(2, { message: "Please enter a state." }),
-    zipCode: z.string().min(5, { message: "Please enter a valid ZIP code." }),
+    country: z.string({ required_error: "Please select a country." }),
+    state: z.string({ required_error: "Please select a state." }),
+    city: z.string({ required_error: "Please select a city." }),
     phoneNumber: z
         .string()
         .min(10, { message: "Please enter a valid phone number." }),
@@ -60,6 +61,22 @@ export default function PatientForm() {
     const { user, authInitialized } = useAuth();
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    // Location data states - memoize countries to prevent recomputation
+    const countries = useMemo(() => Country.getAllCountries(), []);
+    const [selectedCountry, setSelectedCountry] = useState("");
+    const [selectedState, setSelectedState] = useState("");
+
+    // Memoize states and cities based on selections
+    const states = useMemo(() => {
+        if (!selectedCountry) return [];
+        return State.getStatesOfCountry(selectedCountry);
+    }, [selectedCountry]);
+
+    const cities = useMemo(() => {
+        if (!selectedCountry || !selectedState) return [];
+        return City.getCitiesOfState(selectedCountry, selectedState);
+    }, [selectedCountry, selectedState]);
+
     // Initialize form
     const form = useForm({
         resolver: zodResolver(formSchema),
@@ -68,9 +85,9 @@ export default function PatientForm() {
             age: "",
             gender: "",
             streetAddress: "",
-            city: "",
+            country: "",
             state: "",
-            zipCode: "",
+            city: "",
             phoneNumber: "",
             emergencyName: "",
             emergencyRelation: "",
@@ -78,52 +95,89 @@ export default function PatientForm() {
         },
     });
 
+    // Reset state and city when country changes
+    useEffect(() => {
+        if (selectedCountry) {
+            setSelectedState("");
+            form.setValue("state", "");
+            form.setValue("city", "");
+        }
+    }, [selectedCountry, form]);
+
+    // Reset city when state changes
+    useEffect(() => {
+        if (selectedState) {
+            form.setValue("city", "");
+        }
+    }, [selectedState, form]);
+
     // Handle form submission
     const onSubmit = async (data) => {
+        if (isSubmitting) return;
         setIsSubmitting(true);
-        // Here you would typically send the data to your backend
 
-        const resp = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/patient`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-                user_id: user.uid,
-                name: data.fullName,
-                age: data.age,
-                gender: data.gender,
-                street_address: data.streetAddress,
-                city: data.city,
-                state: data.state,
-                zip_code: data.zipCode,
-                phone: data.phoneNumber,
-                emergency_contact_name: data.emergencyName,
-                emergency_contact_relationship: data.emergencyRelation,
-                emergency_contact_phone: data.emergencyPhone,
-            }),
-        });
+        try {
+            // Find the selected location objects
+            const selectedCountryObj = countries.find(
+                (country) => country.isoCode === data.country
+            );
+            const selectedStateObj = states.find(
+                (state) => state.isoCode === data.state
+            );
+            const selectedCityObj = cities.find(
+                (city) => city.name === data.city
+            );
 
-        if (!resp.ok) {
-            const error = await resp.json();
+            const resp = await fetch(
+                `${process.env.NEXT_PUBLIC_API_URL}/patient`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        user_id: user.uid,
+                        name: data.fullName,
+                        age: data.age,
+                        gender: data.gender,
+                        street_address: data.streetAddress,
+                        country: selectedCountryObj?.name || data.country,
+                        state: selectedStateObj?.name || data.state,
+                        city: selectedCityObj?.name || data.city,
+                        phone: data.phoneNumber,
+                        emergency_contact_name: data.emergencyName,
+                        emergency_contact_relationship: data.emergencyRelation,
+                        emergency_contact_phone: data.emergencyPhone,
+                    }),
+                }
+            );
+
+            if (!resp.ok) {
+                const error = await resp.json();
+                toast({
+                    variant: "destructive",
+                    title: "Error",
+                    description: error.message,
+                });
+                return;
+            }
+
+            toast({
+                title: "Registration Complete",
+                description:
+                    "Your patient information has been saved successfully.",
+            });
+
+            router.push("/patient/book-appointment");
+        } catch (error) {
             toast({
                 variant: "destructive",
                 title: "Error",
-                description: error.message,
+                description: "An unexpected error occurred. Please try again.",
             });
+        } finally {
             setIsSubmitting(false);
-            return;
         }
-
-        // Show success message
-        toast({
-            title: "Registration Complete",
-            description:
-                "Your patient information has been saved successfully.",
-        });
-
-        router.push("/patient/book-appointment");
-        setIsSubmitting(false);
     };
 
     if (!authInitialized && user === null) {
@@ -183,7 +237,7 @@ export default function PatientForm() {
                                     <FormLabel>Gender</FormLabel>
                                     <Select
                                         onValueChange={field.onChange}
-                                        defaultValue={field.value}
+                                        value={field.value}
                                     >
                                         <FormControl>
                                             <SelectTrigger>
@@ -238,16 +292,33 @@ export default function PatientForm() {
                         <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                             <FormField
                                 control={form.control}
-                                name="city"
+                                name="country"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>City</FormLabel>
-                                        <FormControl>
-                                            <Input
-                                                placeholder="San Francisco"
-                                                {...field}
-                                            />
-                                        </FormControl>
+                                        <FormLabel>Country</FormLabel>
+                                        <Select
+                                            onValueChange={(value) => {
+                                                field.onChange(value);
+                                                setSelectedCountry(value);
+                                            }}
+                                            value={field.value}
+                                        >
+                                            <FormControl>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Select country" />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent className="max-h-80">
+                                                {countries.map((country) => (
+                                                    <SelectItem
+                                                        key={country.isoCode}
+                                                        value={country.isoCode}
+                                                    >
+                                                        {country.name}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
                                         <FormMessage />
                                     </FormItem>
                                 )}
@@ -258,13 +329,34 @@ export default function PatientForm() {
                                 name="state"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>State</FormLabel>
-                                        <FormControl>
-                                            <Input
-                                                placeholder="California"
-                                                {...field}
-                                            />
-                                        </FormControl>
+                                        <FormLabel>State/Province</FormLabel>
+                                        <Select
+                                            onValueChange={(value) => {
+                                                field.onChange(value);
+                                                setSelectedState(value);
+                                            }}
+                                            value={field.value}
+                                            disabled={
+                                                !selectedCountry ||
+                                                states.length === 0
+                                            }
+                                        >
+                                            <FormControl>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Select state" />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent className="max-h-80">
+                                                {states.map((state) => (
+                                                    <SelectItem
+                                                        key={state.isoCode}
+                                                        value={state.isoCode}
+                                                    >
+                                                        {state.name}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
                                         <FormMessage />
                                     </FormItem>
                                 )}
@@ -272,16 +364,34 @@ export default function PatientForm() {
 
                             <FormField
                                 control={form.control}
-                                name="zipCode"
+                                name="city"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>ZIP Code</FormLabel>
-                                        <FormControl>
-                                            <Input
-                                                placeholder="94103"
-                                                {...field}
-                                            />
-                                        </FormControl>
+                                        <FormLabel>City</FormLabel>
+                                        <Select
+                                            onValueChange={field.onChange}
+                                            value={field.value}
+                                            disabled={
+                                                !selectedState ||
+                                                cities.length === 0
+                                            }
+                                        >
+                                            <FormControl>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Select city" />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent className="max-h-80">
+                                                {cities.map((city) => (
+                                                    <SelectItem
+                                                        key={city.name}
+                                                        value={city.name}
+                                                    >
+                                                        {city.name}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
                                         <FormMessage />
                                     </FormItem>
                                 )}

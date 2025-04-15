@@ -1,9 +1,8 @@
 // app/doctors/page.js
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Search } from "lucide-react";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
     Card,
@@ -14,7 +13,7 @@ import {
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
     Dialog,
@@ -24,16 +23,87 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 import Link from "next/link";
+import { Country, State, City } from "country-state-city";
 
 export default function DoctorSearchPage() {
-    const [searchCity, setSearchCity] = useState("");
+    // States for search parameters
+    const [searchParams, setSearchParams] = useState({
+        country: "",
+        state: "",
+        city: "",
+    });
+
+    // States for UI data
     const [doctors, setDoctors] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
+    // States for location data
+    const [countries, setCountries] = useState([]);
+    const [states, setStates] = useState([]);
+    const [cities, setCities] = useState([]);
+
+    // Load countries on component mount
+    useEffect(() => {
+        const allCountries = Country.getAllCountries();
+        setCountries(allCountries);
+    }, []);
+
+    // Update states when country changes
+    useEffect(() => {
+        if (searchParams.country) {
+            const countryStates = State.getStatesOfCountry(
+                searchParams.country
+            );
+            setStates(countryStates);
+
+            // Reset state and city selections when country changes
+            setSearchParams((prev) => ({
+                ...prev,
+                state: "",
+                city: "",
+            }));
+            setCities([]);
+        } else {
+            setStates([]);
+        }
+    }, [searchParams.country]);
+
+    // Update cities when state changes
+    useEffect(() => {
+        if (searchParams.country && searchParams.state) {
+            const stateCities = City.getCitiesOfState(
+                searchParams.country,
+                searchParams.state
+            );
+            setCities(stateCities);
+
+            // Reset city selection when state changes
+            setSearchParams((prev) => ({
+                ...prev,
+                city: "",
+            }));
+        } else {
+            setCities([]);
+        }
+    }, [searchParams.country, searchParams.state]);
+
     const handleSearch = async () => {
-        if (!searchCity.trim()) return;
+        if (!searchParams.city) return;
+
+        // Get the selected city name for the API request
+        const selectedCity = cities.find(
+            (city) => city.name === searchParams.city
+        );
+        if (!selectedCity) return;
 
         setLoading(true);
         setError(null);
@@ -41,7 +111,7 @@ export default function DoctorSearchPage() {
         try {
             // Replace with your actual API endpoint
             const response = await fetch(
-                `${process.env.NEXT_PUBLIC_API_URL}/doctor/city/${searchCity}`,
+                `${process.env.NEXT_PUBLIC_API_URL}/doctor/city/${selectedCity.name}`,
                 {
                     method: "GET",
                     headers: {
@@ -58,7 +128,6 @@ export default function DoctorSearchPage() {
             }
 
             const data = await response.json();
-
             setDoctors(data);
         } catch (err) {
             setError(err.message);
@@ -69,38 +138,117 @@ export default function DoctorSearchPage() {
     };
 
     const formatHours = (hours) => {
-        if (!hours.from || !hours.to) return "Closed";
+        if (!hours || !hours.from || !hours.to) return "Closed";
         return `${hours.from} - ${hours.to}`;
+    };
+
+    // Find the selected country, state, and city names for display
+    const getSelectedLocationName = (type) => {
+        if (type === "country" && searchParams.country) {
+            const country = countries.find(
+                (c) => c.isoCode === searchParams.country
+            );
+            return country ? country.name : "";
+        } else if (type === "state" && searchParams.state) {
+            const state = states.find((s) => s.isoCode === searchParams.state);
+            return state ? state.name : "";
+        } else if (type === "city" && searchParams.city) {
+            return searchParams.city;
+        }
+        return "";
     };
 
     return (
         <div className="container mx-auto px-4 py-10">
             <h1 className="mb-8 text-center text-3xl font-bold">
-                Find Doctors in Your City
+                Find Doctors in Your Area
             </h1>
 
-            {/* Search Bar */}
-            <div className="mb-12 flex items-center justify-center space-x-2">
-                <div className="relative w-full max-w-md">
-                    <Input
-                        type="text"
-                        value={searchCity}
-                        onChange={(e) => setSearchCity(e.target.value)}
-                        placeholder="Enter city name..."
-                        className="pr-10"
-                        onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                    />
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        className="absolute right-0 top-0 h-full"
-                        onClick={handleSearch}
-                        disabled={loading}
+            {/* Search Dropdowns */}
+            <div className="mb-12 flex flex-col items-center justify-center space-y-4 md:flex-row md:space-x-4 md:space-y-0">
+                <div className="w-full max-w-xs">
+                    <Select
+                        value={searchParams.country}
+                        onValueChange={(value) =>
+                            setSearchParams((prev) => ({
+                                ...prev,
+                                country: value,
+                            }))
+                        }
                     >
-                        <Search className="h-4 w-4" />
-                    </Button>
+                        <SelectTrigger>
+                            <SelectValue placeholder="Select Country" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {countries.map((country) => (
+                                <SelectItem
+                                    key={country.isoCode}
+                                    value={country.isoCode}
+                                >
+                                    {country.name}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
                 </div>
-                <Button onClick={handleSearch} disabled={loading}>
+
+                <div className="w-full max-w-xs">
+                    <Select
+                        value={searchParams.state}
+                        onValueChange={(value) =>
+                            setSearchParams((prev) => ({
+                                ...prev,
+                                state: value,
+                            }))
+                        }
+                        disabled={!searchParams.country}
+                    >
+                        <SelectTrigger>
+                            <SelectValue placeholder="Select State/Province" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {states.map((state) => (
+                                <SelectItem
+                                    key={state.isoCode}
+                                    value={state.isoCode}
+                                >
+                                    {state.name}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
+
+                <div className="w-full max-w-xs">
+                    <Select
+                        value={searchParams.city}
+                        onValueChange={(value) =>
+                            setSearchParams((prev) => ({
+                                ...prev,
+                                city: value,
+                            }))
+                        }
+                        disabled={!searchParams.state}
+                    >
+                        <SelectTrigger>
+                            <SelectValue placeholder="Select City" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {cities.map((city) => (
+                                <SelectItem key={city.name} value={city.name}>
+                                    {city.name}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
+
+                <Button
+                    onClick={handleSearch}
+                    disabled={loading || !searchParams.city}
+                    className="w-full md:w-auto"
+                >
+                    <Search className="mr-2 h-4 w-4" />
                     Search
                 </Button>
             </div>
@@ -116,7 +264,7 @@ export default function DoctorSearchPage() {
             {loading && (
                 <div className="space-y-4">
                     {[1, 2, 3].map((i) => (
-                        <Card key={i} className="w-full">
+                        <Card key={`skeleton-${i}`} className="w-full">
                             <CardHeader>
                                 <Skeleton className="h-8 w-3/4" />
                                 <Skeleton className="h-4 w-1/2" />
@@ -164,8 +312,14 @@ export default function DoctorSearchPage() {
                                         Address:
                                     </span>
                                     <span className="col-span-2">
-                                        {doctor.street_address}, {doctor.city},{" "}
-                                        {doctor.state} {doctor.zip_code}
+                                        {[
+                                            doctor.street_address,
+                                            doctor.city,
+                                            doctor.state,
+                                            doctor.country,
+                                        ]
+                                            .filter(Boolean)
+                                            .join(", ") || "Not specified"}
                                     </span>
                                 </div>
                                 <div className="grid grid-cols-3">
@@ -233,6 +387,7 @@ export default function DoctorSearchPage() {
                         <CardFooter>
                             <Link
                                 href={`/patient/book-appointment/${doctor._id}`}
+                                className="w-full"
                             >
                                 <Button className="w-full">
                                     Book Appointment

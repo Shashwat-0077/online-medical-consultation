@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
@@ -29,11 +29,15 @@ import { Label } from "@/components/ui/label";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
+import { Country, State, City } from "country-state-city";
 
 export default function DoctorForm() {
     const router = useRouter();
     const { user, authInitialized } = useAuth((state) => state);
     const [timingOption, setTimingOption] = useState("single");
+    const [selectedCountry, setSelectedCountry] = useState("");
+    const [selectedState, setSelectedState] = useState("");
+
     const [availableDays, setAvailableDays] = useState({
         monday: true,
         tuesday: true,
@@ -76,9 +80,9 @@ export default function DoctorForm() {
         street_address: z
             .string()
             .min(2, { message: "Street address is required" }),
-        city: z.string().min(2, { message: "City is required" }),
-        state: z.string().min(2, { message: "State is required" }),
-        zip_code: z.string().min(2, { message: "ZIP code is required" }),
+        country: z.string({ required_error: "Please select a country" }),
+        state: z.string({ required_error: "Please select a state" }),
+        city: z.string({ required_error: "Please select a city" }),
         addition_information: z.string().optional(),
         phone: z
             .string()
@@ -126,9 +130,9 @@ export default function DoctorForm() {
             gender: "",
             specialization: "",
             street_address: "",
-            city: "",
+            country: "",
             state: "",
-            zip_code: "",
+            city: "",
             addition_information: "",
             phone: "",
             startTime: "09:00",
@@ -143,20 +147,96 @@ export default function DoctorForm() {
         },
     });
 
-    const handleDayToggle = (day) => {
-        setAvailableDays((prev) => ({
-            ...prev,
-            [day]: !prev[day],
-        }));
+    // Use memoization for static data to prevent unnecessary recalculations
+    const countries = useMemo(() => Country.getAllCountries(), []);
+
+    // Only watch the specific form fields we need for reactivity
+    const startTime = form.watch("startTime");
+    const endTime = form.watch("endTime");
+
+    // Get states for the selected country (memoized)
+    const states = useMemo(() => {
+        if (!selectedCountry) return [];
+        return State.getStatesOfCountry(selectedCountry);
+    }, [selectedCountry]);
+
+    // Get cities for the selected state (memoized)
+    const cities = useMemo(() => {
+        if (!selectedCountry || !selectedState) return [];
+        return City.getCitiesOfState(selectedCountry, selectedState);
+    }, [selectedCountry, selectedState]);
+
+    // Find country, state, and city names from their codes
+    const getLocationNames = () => {
+        const countryCode = form.getValues("country");
+        const stateCode = form.getValues("state");
+        const cityName = form.getValues("city");
+
+        let countryName = "";
+        let stateName = "";
+
+        if (countryCode) {
+            const country = Country.getCountryByCode(countryCode);
+            countryName = country?.name || countryCode;
+        }
+
+        if (countryCode && stateCode) {
+            const state = State.getStateByCodeAndCountry(
+                stateCode,
+                countryCode
+            );
+            stateName = state?.name || stateCode;
+        }
+
+        return {
+            countryName,
+            stateName,
+            cityName,
+        };
     };
 
-    // Effect to apply the single time option to all selected days
+    // Handler for country selection
+    const handleCountryChange = (value) => {
+        setSelectedCountry(value);
+        form.setValue("country", value);
+        form.setValue("state", ""); // Reset state
+        form.setValue("city", ""); // Reset city
+        setSelectedState(""); // Reset selected state
+    };
+
+    // Handler for state selection
+    const handleStateChange = (value) => {
+        setSelectedState(value);
+        form.setValue("state", value);
+        form.setValue("city", ""); // Reset city
+    };
+
+    const handleDayToggle = (day) => {
+        setAvailableDays((prev) => {
+            const newAvailableDays = {
+                ...prev,
+                [day]: !prev[day],
+            };
+
+            // Update hours for this day based on availability
+            if (!newAvailableDays[day]) {
+                form.setValue(`${day}_hours.from`, "");
+                form.setValue(`${day}_hours.to`, "");
+            } else if (timingOption === "single") {
+                form.setValue(`${day}_hours.from`, form.getValues("startTime"));
+                form.setValue(`${day}_hours.to`, form.getValues("endTime"));
+            } else {
+                form.setValue(`${day}_hours.from`, "09:00");
+                form.setValue(`${day}_hours.to`, "17:00");
+            }
+
+            return newAvailableDays;
+        });
+    };
+
+    // Effect to apply global time changes to all available days in single time mode
     useEffect(() => {
         if (timingOption === "single") {
-            const startTime = form.getValues("startTime");
-            const endTime = form.getValues("endTime");
-
-            // Update all selected day hours with the global settings
             Object.keys(availableDays).forEach((day) => {
                 if (availableDays[day]) {
                     form.setValue(`${day}_hours.from`, startTime);
@@ -164,34 +244,7 @@ export default function DoctorForm() {
                 }
             });
         }
-    }, [
-        form.watch("startTime"),
-        form.watch("endTime"),
-        availableDays,
-        timingOption,
-    ]);
-
-    // Effect to handle day availability changes
-    useEffect(() => {
-        // Set or clear hours based on day availability
-        Object.keys(availableDays).forEach((day) => {
-            if (!availableDays[day]) {
-                form.setValue(`${day}_hours.from`, "");
-                form.setValue(`${day}_hours.to`, "");
-            } else if (timingOption === "single") {
-                // If single time mode and day becomes available, set to global time
-                form.setValue(`${day}_hours.from`, form.getValues("startTime"));
-                form.setValue(`${day}_hours.to`, form.getValues("endTime"));
-            } else if (
-                timingOption === "perDay" &&
-                form.getValues(`${day}_hours.from`) === ""
-            ) {
-                // If per day mode and day becomes available but has no time, set default
-                form.setValue(`${day}_hours.from`, "09:00");
-                form.setValue(`${day}_hours.to`, "17:00");
-            }
-        });
-    }, [availableDays, timingOption]);
+    }, [startTime, endTime, timingOption, availableDays]);
 
     // Handle timing option change
     const handleTimingOptionChange = (value) => {
@@ -199,13 +252,13 @@ export default function DoctorForm() {
 
         if (value === "single") {
             // When switching to single, apply global time to all available days
-            const startTime = form.getValues("startTime");
-            const endTime = form.getValues("endTime");
+            const currentStartTime = form.getValues("startTime");
+            const currentEndTime = form.getValues("endTime");
 
             Object.keys(availableDays).forEach((day) => {
                 if (availableDays[day]) {
-                    form.setValue(`${day}_hours.from`, startTime);
-                    form.setValue(`${day}_hours.to`, endTime);
+                    form.setValue(`${day}_hours.from`, currentStartTime);
+                    form.setValue(`${day}_hours.to`, currentEndTime);
                 }
             });
         }
@@ -213,15 +266,18 @@ export default function DoctorForm() {
     };
 
     const onSubmit = async (data) => {
+        // Get full names for locations
+        const { countryName, stateName, cityName } = getLocationNames();
+
         // Format data according to your Mongoose schema
         const doctorData = {
             name: data.name,
             gender: data.gender,
             age: data.age,
             street_address: data.street_address,
-            city: data.city,
-            state: data.state,
-            zip_code: data.zip_code,
+            country: countryName, // Use full country name instead of code
+            state: stateName, // Use full state name instead of code
+            city: cityName,
             addition_information: data.addition_information,
             specialization: data.specialization,
             phone: data.phone,
@@ -254,49 +310,43 @@ export default function DoctorForm() {
             return;
         }
 
-        const resp = await fetch(process.env.NEXT_PUBLIC_API_URL + "/doctor", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-                user_id: user.uid,
-                name: doctorData.name,
-                gender: doctorData.gender,
-                age: doctorData.age,
-                street_address: doctorData.street_address,
-                city: doctorData.city,
-                state: doctorData.state,
-                zip_code: doctorData.zip_code,
-                addition_information: doctorData.addition_information,
-                specialization: doctorData.specialization,
-                phone: doctorData.phone,
-                monday_hours: doctorData.monday_hours,
-                tuesday_hours: doctorData.tuesday_hours,
-                wednesday_hours: doctorData.wednesday_hours,
-                thursday_hours: doctorData.thursday_hours,
-                friday_hours: doctorData.friday_hours,
-                saturday_hours: doctorData.saturday_hours,
-                sunday_hours: doctorData.sunday_hours,
-            }),
-        });
+        try {
+            const resp = await fetch(
+                process.env.NEXT_PUBLIC_API_URL + "/doctor",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        user_id: user.uid,
+                        ...doctorData,
+                    }),
+                }
+            );
 
-        if (resp.ok) {
-            toast({
-                title: "Success",
-                description: "Doctor registration completed successfully.",
-            });
-            router.push("/doctor/appointments");
-        } else {
-            const error = await resp.json();
+            if (resp.ok) {
+                toast({
+                    title: "Success",
+                    description: "Doctor registration completed successfully.",
+                });
+                router.push("/doctor/appointments");
+            } else {
+                const error = await resp.json();
+                toast({
+                    title: "Error",
+                    description: error.message || "Failed to register doctor.",
+                    variant: "destructive",
+                });
+            }
+        } catch (error) {
+            console.error("Registration error:", error);
             toast({
                 title: "Error",
-                description: error.message || "Failed to register doctor.",
+                description: "An unexpected error occurred. Please try again.",
                 variant: "destructive",
             });
         }
-
-        // Here you would typically send this data to your backend
     };
 
     if (!authInitialized && user === null) {
@@ -454,19 +504,33 @@ export default function DoctorForm() {
                             )}
                         />
 
-                        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                             <FormField
                                 control={form.control}
-                                name="city"
+                                name="country"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>City</FormLabel>
-                                        <FormControl>
-                                            <Input
-                                                placeholder="San Francisco"
-                                                {...field}
-                                            />
-                                        </FormControl>
+                                        <FormLabel>Country</FormLabel>
+                                        <Select
+                                            onValueChange={handleCountryChange}
+                                            value={field.value}
+                                        >
+                                            <FormControl>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Select country" />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent className="max-h-96">
+                                                {countries.map((country) => (
+                                                    <SelectItem
+                                                        key={country.isoCode}
+                                                        value={country.isoCode}
+                                                    >
+                                                        {country.name}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
                                         <FormMessage />
                                     </FormItem>
                                 )}
@@ -477,30 +541,62 @@ export default function DoctorForm() {
                                 name="state"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>State</FormLabel>
-                                        <FormControl>
-                                            <Input
-                                                placeholder="California"
-                                                {...field}
-                                            />
-                                        </FormControl>
+                                        <FormLabel>State/Province</FormLabel>
+                                        <Select
+                                            onValueChange={handleStateChange}
+                                            value={field.value}
+                                            disabled={!selectedCountry}
+                                        >
+                                            <FormControl>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Select state" />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent className="max-h-96">
+                                                {states.map((state) => (
+                                                    <SelectItem
+                                                        key={state.isoCode}
+                                                        value={state.isoCode}
+                                                    >
+                                                        {state.name}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
                                         <FormMessage />
                                     </FormItem>
                                 )}
                             />
+                        </div>
 
+                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                             <FormField
                                 control={form.control}
-                                name="zip_code"
+                                name="city"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>ZIP Code</FormLabel>
-                                        <FormControl>
-                                            <Input
-                                                placeholder="94103"
-                                                {...field}
-                                            />
-                                        </FormControl>
+                                        <FormLabel>City</FormLabel>
+                                        <Select
+                                            onValueChange={field.onChange}
+                                            value={field.value}
+                                            disabled={!selectedState}
+                                        >
+                                            <FormControl>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Select city" />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent className="max-h-96">
+                                                {cities.map((city) => (
+                                                    <SelectItem
+                                                        key={city.name}
+                                                        value={city.name}
+                                                    >
+                                                        {city.name}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
                                         <FormMessage />
                                     </FormItem>
                                 )}

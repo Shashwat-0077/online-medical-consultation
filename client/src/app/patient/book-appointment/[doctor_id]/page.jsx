@@ -157,8 +157,14 @@ const BookingPage = ({ params }) => {
                             </li>
                             <li>
                                 <strong>Address:</strong>{" "}
-                                {doctor.street_address}, {doctor.city},{" "}
-                                {doctor.state} {doctor.zip_code}
+                                {[
+                                    doctor.street_address,
+                                    doctor.city,
+                                    doctor.state,
+                                    doctor.country,
+                                ]
+                                    .filter(Boolean)
+                                    .join(", ") || "Not specified"}
                             </li>
                         </ul>
                     </CardContent>
@@ -201,8 +207,14 @@ const BookingPage = ({ params }) => {
                             </li>
                             <li>
                                 <strong>Address:</strong>{" "}
-                                {patient.street_address}, {patient.city},{" "}
-                                {patient.state} {patient.zip_code}
+                                {[
+                                    patient.street_address,
+                                    patient.city,
+                                    patient.state,
+                                    patient.country,
+                                ]
+                                    .filter(Boolean)
+                                    .join(", ") || "Not specified"}
                             </li>
                             <li>
                                 <strong>Emergency:</strong>{" "}

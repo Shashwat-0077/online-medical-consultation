@@ -12,7 +12,7 @@ const doctorSchema = new mongoose.Schema({
     street_address: { type: String, default: "" },
     city: { type: String, default: "" },
     state: { type: String, default: "" },
-    zip_code: { type: String, default: "" },
+    country: { type: String, default: "" },
     addition_information: { type: String, default: "" },
     specialization: { type: String, default: "" },
     phone: { type: String, default: "" },
