@@ -91,6 +91,7 @@ export default function PatientForm() {
             },
             body: JSON.stringify({
                 user_id: user.uid,
+                name: data.fullName,
                 age: data.age,
                 gender: data.gender,
                 street_address: data.streetAddress,

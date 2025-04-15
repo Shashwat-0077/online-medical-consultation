@@ -172,8 +172,8 @@ router.get("/:appointmentId", async (req, res) => {
                         reason: 1,
                         mode: 1,
                         status: 1,
-                        doctor: "$doctor_id", // just the ObjectId
-                        patient: 1, // flattened patient
+                        doctor: "$doctor_id",
+                        patient: 1,
                     },
                 },
             ]);
@@ -217,14 +217,86 @@ router.get("/:appointmentId", async (req, res) => {
                         reason: 1,
                         mode: 1,
                         status: 1,
-                        patient: "$patient_id", // just the ObjectId
-                        doctor: 1, // flattened doctor
+                        patient: "$patient_id",
+                        doctor: 1,
+                    },
+                },
+            ]);
+            appointment = appointment[0];
+        } else if (fill === "both") {
+            appointment = await Appointment.aggregate([
+                {
+                    $match: { _id: new ObjectId(appointmentId) },
+                },
+                // Lookup and merge patient
+                {
+                    $lookup: {
+                        from: "patients",
+                        localField: "patient_id",
+                        foreignField: "_id",
+                        as: "patient",
+                    },
+                },
+                { $unwind: "$patient" },
+                {
+                    $lookup: {
+                        from: "users",
+                        localField: "patient.user_id",
+                        foreignField: "_id",
+                        as: "patientUser",
+                    },
+                },
+                { $unwind: "$patientUser" },
+                {
+                    $addFields: {
+                        patient: {
+                            $mergeObjects: ["$patientUser", "$patient"],
+                        },
+                    },
+                },
+                // Lookup and merge doctor
+                {
+                    $lookup: {
+                        from: "doctors",
+                        localField: "doctor_id",
+                        foreignField: "_id",
+                        as: "doctor",
+                    },
+                },
+                { $unwind: "$doctor" },
+                {
+                    $lookup: {
+                        from: "users",
+                        localField: "doctor.user_id",
+                        foreignField: "_id",
+                        as: "doctorUser",
+                    },
+                },
+                { $unwind: "$doctorUser" },
+                {
+                    $addFields: {
+                        doctor: {
+                            $mergeObjects: ["$doctorUser", "$doctor"],
+                        },
+                    },
+                },
+                {
+                    $project: {
+                        _id: 1,
+                        date: 1,
+                        from_time: 1,
+                        to_time: 1,
+                        reason: 1,
+                        mode: 1,
+                        status: 1,
+                        patient: 1,
+                        doctor: 1,
                     },
                 },
             ]);
             appointment = appointment[0];
         } else {
-            appointment = await Appointment.findById(req.params.appointmentId);
+            appointment = await Appointment.findById(appointmentId);
         }
 
         if (!appointment) {

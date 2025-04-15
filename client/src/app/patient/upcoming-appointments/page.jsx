@@ -50,7 +50,22 @@ const Page = () => {
                     `${process.env.NEXT_PUBLIC_API_URL}/appointments/patient/${user.uid}`
                 );
                 const data = await res.json();
-                setAppointments(data);
+                setAppointments(
+                    data.filter((appt) => {
+                        const appointmentDate = new Date(appt.date);
+                        const today = new Date();
+                        today.setHours(0, 0, 0, 0);
+
+                        if (appt.status === "pending") {
+                            return true;
+                        }
+
+                        return (
+                            appointmentDate >= today &&
+                            appt.status === "confirmed"
+                        );
+                    })
+                );
             } catch (err) {
                 console.error("Error fetching appointments:", err);
             } finally {
@@ -75,6 +90,16 @@ const Page = () => {
     if (!authInitialized)
         return <div className="p-6">Initializing auth...</div>;
     if (loading) return <div className="p-6">Loading appointments...</div>;
+
+    if (!appointments || appointments.length === 0) {
+        return (
+            <div className="flex h-full items-center justify-center">
+                <p className="text-muted-foreground">
+                    No appointments found for today.
+                </p>
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-4">

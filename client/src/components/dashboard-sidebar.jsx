@@ -58,21 +58,17 @@ export function DashboardSidebar({ items, userType, userName, userImage }) {
                         )}
                     >
                         <Avatar className="h-20 w-20 border-2 border-white shadow-sm">
-                            <AvatarImage
-                                src={
-                                    userImage ||
-                                    "/placeholder.svg?height=80&width=80"
-                                }
-                                alt={userName}
-                            />
+                            <AvatarImage src={userImage} alt={userName} />
                             <AvatarFallback className={avatarBgColor}>
                                 {userName
                                     .split(" ")
                                     .map((name) => name[0])
-                                    .join("")}
+                                    .join("")
+                                    .slice(0, 2)}
                             </AvatarFallback>
                         </Avatar>
                         <h2 className="mt-4 text-lg font-semibold">
+                            {userType === "doctor" ? "Dr. " : ""}
                             {userName}
                         </h2>
                         <p className={cn("text-sm", textColor)}>

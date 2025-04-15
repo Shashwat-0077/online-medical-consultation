@@ -11,7 +11,7 @@ router.post("/", async (req, res) => {
         await patient.save();
         await User.findByIdAndUpdate(
             patient.user_id,
-            { role: "patient" },
+            { role: "patient", name: req.body.name || "Not Specified" },
             { new: true }
         );
 

@@ -49,6 +49,9 @@ export default function Signup() {
                     },
                     body: JSON.stringify({
                         _id: result.user.uid,
+                        displayImage: result.user.photoURL,
+                        email: result.user.email,
+                        name: result.user.displayName,
                         role: "guest",
                     }),
                 }

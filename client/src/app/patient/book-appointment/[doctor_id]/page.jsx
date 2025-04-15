@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "@/hooks/use-toast";
 import { useRouter } from "next/navigation";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const BookingPage = ({ params }) => {
     const { doctor_id } = use(params);
@@ -121,14 +122,22 @@ const BookingPage = ({ params }) => {
                     </CardHeader>
                     <CardContent className="space-y-2 text-sm">
                         <div className="flex items-center gap-4">
-                            <img
-                                src={doctor.displayImage}
-                                alt={doctor.name}
-                                className="h-20 w-20 rounded-full object-cover"
-                            />
+                            <Avatar className="h-20 w-20 border-2 border-white shadow-sm">
+                                <AvatarImage
+                                    src={doctor.displayImage}
+                                    alt={doctor.name}
+                                />
+                                <AvatarFallback>
+                                    {doctor.name
+                                        .split(" ")
+                                        .map((name) => name[0])
+                                        .join("")
+                                        .slice(0, 2)}
+                                </AvatarFallback>
+                            </Avatar>
                             <div>
                                 <p className="text-lg font-semibold">
-                                    {doctor.name}
+                                    Dr. {doctor.name}
                                 </p>
                                 <p className="text-muted-foreground">
                                     {doctor.email}
@@ -164,11 +173,19 @@ const BookingPage = ({ params }) => {
                     </CardHeader>
                     <CardContent className="space-y-2 text-sm">
                         <div className="flex items-center gap-4">
-                            <img
-                                src={patient.displayImage}
-                                alt={patient.name}
-                                className="h-20 w-20 rounded-full object-cover"
-                            />
+                            <Avatar className="h-20 w-20 border-2 border-white shadow-sm">
+                                <AvatarImage
+                                    src={patient.displayImage}
+                                    alt={patient.name}
+                                />
+                                <AvatarFallback>
+                                    {patient.name
+                                        .split(" ")
+                                        .map((name) => name[0])
+                                        .join("")
+                                        .slice(0, 2)}
+                                </AvatarFallback>
+                            </Avatar>
                             <div>
                                 <p className="text-lg font-semibold">
                                     {patient.name}

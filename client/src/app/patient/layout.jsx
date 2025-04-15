@@ -4,14 +4,14 @@ import { DashboardSidebar } from "@/components/dashboard-sidebar";
 import Loading from "@/components/loading";
 import { toast } from "@/hooks/use-toast";
 import useCheckPatient from "@/hooks/useCheckPatient";
-import { Calendar, ClipboardList, Clock } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { Calendar, NotebookPen, Clock } from "lucide-react";
+import { useEffect, useState } from "react";
 
 const sidebarItems = [
     {
         title: "Book Appointment",
         href: "/patient/book-appointment",
-        icon: Calendar,
+        icon: NotebookPen,
     },
     {
         title: "Upcoming Appointments",
@@ -19,19 +19,47 @@ const sidebarItems = [
         icon: Calendar,
     },
     {
-        title: "Medical History",
-        href: "/patient/medical-history",
-        icon: ClipboardList,
-    },
-    {
-        title: "Previous Appointments",
-        href: "/patient/previous-appointments",
+        title: "Completed Appointments",
+        href: "/patient/completed-appointments",
         icon: Clock,
     },
 ];
 
 export default function PatientLayout({ children }) {
-    const { user, isLoading, isPatient } = useCheckPatient();
+    const { user: firebaseUser, isLoading, isPatient } = useCheckPatient();
+    const [user, setUser] = useState(null);
+
+    useEffect(() => {
+        if (isLoading) return;
+        if (!isPatient) return;
+
+        const fetchUser = async () => {
+            const resp = await fetch(
+                process.env.NEXT_PUBLIC_API_URL +
+                    "/user" +
+                    `/${firebaseUser.uid}`,
+                {
+                    method: "GET",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                }
+            );
+            if (!resp.ok) {
+                const error = await resp.json();
+                toast({
+                    title: "Error",
+                    description: error.message,
+                    variant: "destructive",
+                });
+                return;
+            }
+            const data = await resp.json();
+            console.log(data);
+            setUser(data);
+        };
+        fetchUser();
+    }, [isLoading, isPatient, firebaseUser]);
 
     if (isLoading) {
         return <Loading />;
@@ -50,8 +78,8 @@ export default function PatientLayout({ children }) {
             <DashboardSidebar
                 items={sidebarItems}
                 userType="patient"
-                userName={user.displayName}
-                userImage={user.photoURL}
+                userName={firebaseUser.displayName || user?.name || "User"}
+                userImage={firebaseUser.photoURL}
             />
             <div className="flex-1 md:ml-64">
                 <main className="container mx-auto p-4 md:p-6">{children}</main>

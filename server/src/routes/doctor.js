@@ -12,7 +12,7 @@ router.post("/", async (req, res) => {
 
         await User.findByIdAndUpdate(
             doctor.user_id,
-            { role: "doctor" },
+            { role: "doctor", name: req.body.name || "Not Specified" },
             { new: true }
         );
         res.status(201).json(doctor);

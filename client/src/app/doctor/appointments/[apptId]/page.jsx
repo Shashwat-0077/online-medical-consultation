@@ -1,4 +1,5 @@
 "use client";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
     Card,
@@ -12,7 +13,6 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "@/hooks/use-toast";
-import { Avatar, AvatarFallback, AvatarImage } from "@radix-ui/react-avatar";
 import { useRouter } from "next/navigation";
 import React, { use, useEffect } from "react";
 
@@ -160,19 +160,22 @@ const CompletionPage = ({ params }) => {
     }
 
     return (
-        <div className="flex min-h-screen gap-2">
+        <div className="space-y-4">
             {/* user card */}
             <div className="w-full">
                 <Card className="h-full w-full">
                     <CardHeader className="relative flex flex-col items-center justify-center bg-gray-100 p-0">
-                        <Avatar className="translate-y-1/2 transform">
+                        <Avatar className="size-24 translate-y-1/2 transform">
                             <AvatarImage
                                 className="h-24 w-24 rounded-full border-8 border-white"
-                                src={appointment.patient.displayImage}
+                                src={appointment.patient?.displayImage}
                                 alt="Guest User"
                             />
-                            <AvatarFallback className="h-24 w-24 rounded-full border-8 border-white">
-                                {user.displayName.slice(0, 1) || "G"}
+                            <AvatarFallback className="rounded-full border border-black bg-white">
+                                <div className="m-0 w-full p-0 text-center text-2xl font-bold">
+                                    {appointment.patient.name?.slice(0, 1) ||
+                                        "G"}
+                                </div>
                             </AvatarFallback>
                         </Avatar>
                     </CardHeader>

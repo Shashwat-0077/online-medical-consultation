@@ -62,7 +62,10 @@ export default function LandingPage() {
                                         alt="Guest User"
                                     />
                                     <AvatarFallback>
-                                        {user.displayName.slice(0, 1) || "G"}
+                                        {user.displayImage
+                                            ? user.displayName.slice(0, 1) ||
+                                              "G"
+                                            : user.email.slice(0, 1) || "G"}
                                     </AvatarFallback>
                                 </Avatar>
                             </DropdownMenuTrigger>

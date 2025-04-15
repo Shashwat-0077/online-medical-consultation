@@ -44,7 +44,6 @@ export function AuthProvider({ children }) {
             return await signInWithEmailAndPassword(auth, email, password);
         } catch (error) {
             setError(error.message);
-            throw error;
         }
     };
 
@@ -54,7 +53,6 @@ export function AuthProvider({ children }) {
             return await createUserWithEmailAndPassword(auth, email, password);
         } catch (error) {
             setError(error.message);
-            throw error;
         }
     };
 
@@ -63,7 +61,6 @@ export function AuthProvider({ children }) {
             return await signInWithPopup(auth, googleProvider);
         } catch (error) {
             setError(error.message);
-            throw error;
         }
     };
 
@@ -73,7 +70,6 @@ export function AuthProvider({ children }) {
             await firebaseSignOut(auth);
         } catch (error) {
             setError(error.message);
-            throw error;
         }
     };
 
