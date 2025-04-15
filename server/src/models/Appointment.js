@@ -73,6 +73,9 @@ appointmentSchema.pre("save", async function (next) {
             .findOne({
                 doctor_id: this.doctor_id,
                 patient_id: this.patient_id,
+                status: {
+                    $in: ["pending", "confirmed"],
+                },
             });
 
         if (existingAppointment) {

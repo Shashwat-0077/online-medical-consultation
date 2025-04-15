@@ -287,6 +287,28 @@ router.put("/:appointmentId", async (req, res) => {
     }
 });
 
+// Cancel an appointment
+router.patch("/cancel/:appointmentId", async (req, res) => {
+    try {
+        const { appointmentId } = req.params;
+
+        const updatedAppointment = await Appointment.findByIdAndUpdate(
+            appointmentId,
+            { $set: { status: "cancelled" } },
+            { new: true }
+        );
+
+        if (!updatedAppointment) {
+            return res.status(404).json({ message: "Appointment not found" });
+        }
+
+        res.status(200).json({ message: "Appointment cancelled successfully" });
+    } catch (error) {
+        console.error("Error cancelling appointment:", error);
+        res.status(500).json({ message: error.message });
+    }
+});
+
 // Delete an appointment
 router.delete("/:appointmentId", async (req, res) => {
     try {

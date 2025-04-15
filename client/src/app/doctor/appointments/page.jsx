@@ -64,16 +64,20 @@ export default function AppointmentsPage() {
                     throw new Error("Failed to fetch appointments");
                 }
                 const data = await res.json();
-
+                console.log(data);
                 setAppointments(
                     data.filter((appt) => {
                         const appointmentDate = new Date(appt.date);
                         const today = new Date();
                         today.setHours(0, 0, 0, 0);
+
+                        if (appt.status === "pending") {
+                            return true;
+                        }
+
                         return (
                             appointmentDate >= today &&
-                            appt.status !== "cancelled" &&
-                            appt.status !== "completed"
+                            appt.status === "confirmed"
                         );
                     })
                 );
@@ -208,20 +212,22 @@ export default function AppointmentsPage() {
 
         try {
             const response = await fetch(
-                `${process.env.NEXT_PUBLIC_API_URL}/appointments/${currentAppointment._id}`,
+                `${process.env.NEXT_PUBLIC_API_URL}/appointments/cancel/${currentAppointment._id}`,
                 {
                     method: "PATCH",
                     headers: {
                         "Content-Type": "application/json",
                     },
-                    body: JSON.stringify({
-                        status: "cancelled",
-                    }),
                 }
             );
 
             if (!response.ok) {
-                throw new Error("Failed to update appointment");
+                toast({
+                    title: "Error",
+                    description: "Failed to decline appointment",
+                    variant: "destructive",
+                });
+                return;
             }
 
             // Update the local state to reflect the changes
