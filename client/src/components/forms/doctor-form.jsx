@@ -254,7 +254,6 @@ export default function DoctorForm() {
             return;
         }
 
-        // console.log("Form submitted successfully:", doctorData);
         const resp = await fetch(process.env.NEXT_PUBLIC_API_URL + "/doctor", {
             method: "POST",
             headers: {

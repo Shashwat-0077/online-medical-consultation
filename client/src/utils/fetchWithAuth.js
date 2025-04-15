@@ -10,7 +10,7 @@ import axios from "axios";
  */
 export async function fetchWithAuth(url, method, data = null, authToken) {
     try {
-        console.log(authToken);
+        // console.log(authToken);
 
         const response = await axios({
             url,

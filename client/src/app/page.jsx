@@ -23,9 +23,38 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/context/AuthContext";
+import { useEffect, useState } from "react";
 
 export default function LandingPage() {
-    const { user, authInitialized, signOut } = useAuth((state) => state);
+    const {
+        user: firebaseUser,
+        authInitialized,
+        signOut,
+    } = useAuth((state) => state);
+    const [user, setUser] = useState(null);
+
+    useEffect(() => {
+        if (!firebaseUser || !authInitialized) return;
+
+        const fetchUser = async () => {
+            const response = await fetch(
+                `${process.env.NEXT_PUBLIC_API_URL}/user/${firebaseUser?.uid}`,
+                {
+                    method: "GET",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                }
+            );
+            if (!response.ok) {
+                console.error("Failed to fetch user data");
+                return;
+            }
+            const data = await response.json();
+            setUser(data);
+        };
+        fetchUser();
+    }, [firebaseUser, authInitialized]);
 
     return (
         <div className="flex min-h-screen flex-col">
@@ -38,7 +67,7 @@ export default function LandingPage() {
 
                     {!authInitialized ? (
                         <Loader2 className="h-6 w-6 animate-spin text-teal-600" />
-                    ) : !user ? (
+                    ) : !firebaseUser ? (
                         <div className="flex items-center gap-4">
                             <Link
                                 href="/auth/signin"
@@ -57,15 +86,15 @@ export default function LandingPage() {
                         <DropdownMenu modal={false}>
                             <DropdownMenuTrigger>
                                 <Avatar>
-                                    <AvatarImage
-                                        src={user.photoURL}
-                                        alt="Guest User"
-                                    />
+                                    <AvatarImage src={firebaseUser.photoURL} />
                                     <AvatarFallback>
-                                        {user.displayImage
-                                            ? user.displayName.slice(0, 1) ||
-                                              "G"
-                                            : user.email.slice(0, 1) || "G"}
+                                        {firebaseUser.displayImage
+                                            ? firebaseUser.displayName.slice(
+                                                  0,
+                                                  1
+                                              ) || "G"
+                                            : firebaseUser.email.slice(0, 1) ||
+                                              "G"}
                                     </AvatarFallback>
                                 </Avatar>
                             </DropdownMenuTrigger>
@@ -73,20 +102,13 @@ export default function LandingPage() {
                                 <DropdownMenuLabel>
                                     My Account
                                 </DropdownMenuLabel>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem>Profile</DropdownMenuItem>
-                                <DropdownMenuItem>Billing</DropdownMenuItem>
-                                <DropdownMenuItem>Team</DropdownMenuItem>
-                                <DropdownMenuItem>
-                                    Subscription
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
                                 <DropdownMenuItem>
                                     <Button
                                         variant="destructive"
                                         className="w-full"
                                         onClick={() => {
                                             signOut();
+                                            setUser(null);
                                         }}
                                     >
                                         Sign Out
@@ -116,12 +138,35 @@ export default function LandingPage() {
                                     </p>
                                 </div>
                                 <div className="flex flex-col gap-2 min-[400px]:flex-row">
-                                    <Button
-                                        size="lg"
-                                        className="bg-teal-600 hover:bg-teal-700"
-                                    >
-                                        Book Consultation
-                                    </Button>
+                                    {!authInitialized || !user ? (
+                                        <Link href={"/auth/signup"}>
+                                            <Button
+                                                size="lg"
+                                                className="bg-teal-600 hover:bg-teal-700"
+                                            >
+                                                Get Started
+                                            </Button>
+                                        </Link>
+                                    ) : (
+                                        <Link
+                                            href={
+                                                user.role === "doctor"
+                                                    ? "/doctor/appointments"
+                                                    : user.role === "patient"
+                                                      ? "/patient/book-appointment"
+                                                      : user.role === "guest"
+                                                        ? "/onboarding"
+                                                        : "/auth/signup"
+                                            }
+                                        >
+                                            <Button
+                                                size="lg"
+                                                className="bg-teal-600 hover:bg-teal-700"
+                                            >
+                                                Go to dashboard
+                                            </Button>
+                                        </Link>
+                                    )}
                                     <Button size="lg" variant="outline">
                                         Learn More
                                     </Button>

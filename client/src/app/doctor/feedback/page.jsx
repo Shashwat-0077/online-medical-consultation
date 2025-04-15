@@ -104,7 +104,6 @@ export default function FeedbackPage() {
                                 <Avatar>
                                     <AvatarImage
                                         src={`/placeholder.svg?height=40&width=40`}
-                                        alt={feedback.patientName}
                                     />
                                     <AvatarFallback>
                                         {feedback.patientName

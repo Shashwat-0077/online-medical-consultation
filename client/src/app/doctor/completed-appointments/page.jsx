@@ -121,7 +121,6 @@ export default function PatientsTreatedPage() {
                                 <Avatar>
                                     <AvatarImage
                                         src={`/placeholder.svg?height=40&width=40`}
-                                        alt={patient.name}
                                     />
                                     <AvatarFallback>
                                         {patient.name

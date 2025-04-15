@@ -111,7 +111,6 @@ const Page = () => {
                                 <Avatar>
                                     <AvatarImage
                                         src={appt.doctor.displayImage}
-                                        alt={appt.doctor.name}
                                     />
                                     <AvatarFallback>
                                         {appt.doctor.name

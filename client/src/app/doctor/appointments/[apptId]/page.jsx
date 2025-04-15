@@ -169,7 +169,6 @@ const CompletionPage = ({ params }) => {
                             <AvatarImage
                                 className="h-24 w-24 rounded-full border-8 border-white"
                                 src={appointment.patient?.displayImage}
-                                alt="Guest User"
                             />
                             <AvatarFallback className="rounded-full border border-black bg-white">
                                 <div className="m-0 w-full p-0 text-center text-2xl font-bold">

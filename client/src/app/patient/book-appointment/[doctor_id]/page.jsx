@@ -123,10 +123,7 @@ const BookingPage = ({ params }) => {
                     <CardContent className="space-y-2 text-sm">
                         <div className="flex items-center gap-4">
                             <Avatar className="h-20 w-20 border-2 border-white shadow-sm">
-                                <AvatarImage
-                                    src={doctor.displayImage}
-                                    alt={doctor.name}
-                                />
+                                <AvatarImage src={doctor.displayImage} />
                                 <AvatarFallback>
                                     {doctor.name
                                         .split(" ")
@@ -174,10 +171,7 @@ const BookingPage = ({ params }) => {
                     <CardContent className="space-y-2 text-sm">
                         <div className="flex items-center gap-4">
                             <Avatar className="h-20 w-20 border-2 border-white shadow-sm">
-                                <AvatarImage
-                                    src={patient.displayImage}
-                                    alt={patient.name}
-                                />
+                                <AvatarImage src={patient.displayImage} />
                                 <AvatarFallback>
                                     {patient.name
                                         .split(" ")

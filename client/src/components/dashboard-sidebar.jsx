@@ -28,6 +28,8 @@ export function DashboardSidebar({ items, userType, userName, userImage }) {
     const avatarBgColor =
         userType === "doctor" ? "bg-blue-200" : "bg-emerald-200";
 
+    console.log(userImage);
+
     return (
         <>
             {/* Mobile menu button */}
@@ -58,7 +60,7 @@ export function DashboardSidebar({ items, userType, userName, userImage }) {
                         )}
                     >
                         <Avatar className="h-20 w-20 border-2 border-white shadow-sm">
-                            <AvatarImage src={userImage} alt={userName} />
+                            <AvatarImage src={userImage} />
                             <AvatarFallback className={avatarBgColor}>
                                 {userName
                                     .split(" ")

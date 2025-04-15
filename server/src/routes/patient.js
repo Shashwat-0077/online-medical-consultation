@@ -63,8 +63,6 @@ router.get("/user/:userId", async (req, res) => {
 
         const flattenedPatient = patient.length > 0 ? patient[0] : null;
 
-        console.log(flattenedPatient);
-
         if (!patient) {
             return res.status(404).json({ message: "Patient not found" });
         }

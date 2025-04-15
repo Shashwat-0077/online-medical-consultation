@@ -59,7 +59,6 @@ export default function DoctorSearchPage() {
 
             const data = await response.json();
 
-            console.log(data);
             setDoctors(data);
         } catch (err) {
             setError(err.message);

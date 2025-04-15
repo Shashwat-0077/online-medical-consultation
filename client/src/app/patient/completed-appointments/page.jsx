@@ -94,7 +94,6 @@ export default function PreviousAppointmentsPage() {
                                     <Avatar>
                                         <AvatarImage
                                             src={`/placeholder.svg?height=40&width=40`}
-                                            alt={appointment.doctorName}
                                         />
                                         <AvatarFallback>
                                             {appointment.doctorName

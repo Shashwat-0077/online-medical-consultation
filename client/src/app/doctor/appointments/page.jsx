@@ -64,7 +64,6 @@ export default function AppointmentsPage() {
                     throw new Error("Failed to fetch appointments");
                 }
                 const data = await res.json();
-                console.log(data);
                 setAppointments(
                     data.filter((appt) => {
                         const appointmentDate = new Date(appt.date);
@@ -281,7 +280,6 @@ export default function AppointmentsPage() {
                                 <Avatar>
                                     <AvatarImage
                                         src={appt.patient.displayImage}
-                                        alt={appt.patient.name}
                                     />
                                     <AvatarFallback>
                                         {appt.patient.name
@@ -370,7 +368,6 @@ export default function AppointmentsPage() {
                                                             appt.patient
                                                                 .displayImage
                                                         }
-                                                        alt={appt.patient.name}
                                                     />
                                                     <AvatarFallback className="bg-primary/10 text-primary">
                                                         {appt.patient.name

@@ -55,7 +55,6 @@ export default function PatientLayout({ children }) {
                 return;
             }
             const data = await resp.json();
-            console.log(data);
             setUser(data);
         };
         fetchUser();
@@ -78,8 +77,8 @@ export default function PatientLayout({ children }) {
             <DashboardSidebar
                 items={sidebarItems}
                 userType="patient"
-                userName={firebaseUser.displayName || user?.name || "User"}
-                userImage={firebaseUser.photoURL}
+                userName={user?.name || firebaseUser.displayName || "User"}
+                userImage={user?.displayImage || firebaseUser.photoURL}
             />
             <div className="flex-1 md:ml-64">
                 <main className="container mx-auto p-4 md:p-6">{children}</main>

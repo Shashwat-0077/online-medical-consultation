@@ -82,7 +82,6 @@ export default function PatientForm() {
     const onSubmit = async (data) => {
         setIsSubmitting(true);
         // Here you would typically send the data to your backend
-        console.log("Patient form submitted:", data);
 
         const resp = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/patient`, {
             method: "POST",
@@ -104,8 +103,6 @@ export default function PatientForm() {
                 emergency_contact_phone: data.emergencyPhone,
             }),
         });
-
-        console.log(resp);
 
         if (!resp.ok) {
             const error = await resp.json();
