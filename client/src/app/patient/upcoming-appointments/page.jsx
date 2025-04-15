@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
-import { NotebookTabs, StickyNote, Trash2, Video } from "lucide-react";
+import { NotebookTabs, Trash2, Video } from "lucide-react";
 import {
     Tooltip,
     TooltipContent,
