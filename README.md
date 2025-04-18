@@ -39,18 +39,18 @@ cd server
 npm run dev
 ```
 
-The server will typically run on [http://localhost:5000](http://localhost:5000) (as configured in the `.env.local` file).
+The server will typically run on [http://localhost:5000](http://localhost:5000) (as configured in the `.env` file).
 
 ---
 
 ## 🛠️ Environment Variables
 
-This project uses `.env.local` files to manage environment variables for both the client and the server.
+This project uses `.env` files to manage environment variables for both the client and the server.
 
-### Client (`/client/.env.local`)
+### Client (`/client/.env`)
 
 You'll need to set up Firebase for the client application.  
-Create a `.env.local` file in the `client` directory and add your Firebase configuration:
+Create a `.env` file in the `client` directory and add your Firebase configuration:
 
 ```env
 NEXT_PUBLIC_API_KEY=YOUR_FIREBASE_API_KEY
@@ -64,9 +64,9 @@ NEXT_PUBLIC_SOCKET_URL=http://localhost:5000
 NEXT_PUBLIC_API_URL=http://localhost:5000/api
 ```
 
-### Server (`/server/.env.local`)
+### Server (`/server/.env`)
 
-Create a `.env.local` file in the `server` directory and add the following:
+Create a `.env` file in the `server` directory and add the following:
 
 ```env
 FRONTEND_URL=http://localhost:3000
